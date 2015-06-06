@@ -7,9 +7,10 @@ The game is played with a 32 card deck, only the duece through
 nine are used. The best three card hand made from one hole card
 and three community cards wins the hand. The hand ranks are:
 high card, pair, straight, flush, trips, straight flush.
-Seats are shuffled every hand. Ante is 1% of player's chip count.
-There are no-limit, check-raise allowed, betting rounds after the 
-hole card, flop, turn, and river.
+Seats are shuffled every hand. Ante is 1/2 of the first player's
+chips, 1/4 of the second player's chips, and so on.
+There are no-limit betting rounds after the hole card, flop, turn, 
+and river.
 
 A bot must implement the `play()` function, and optionally `observe()`.
 
@@ -39,11 +40,11 @@ To get a copy of the game:
 
 To play a game, human against computer:
 
-    $ python roshambolo.py human 3 p_computer
+    $ python mhe.py human 3 p_computer
 
 To play a game betweent computer and random, starting with 10,000 chips:
 
-    $ python roshambolo.py game 10000 p_computer p_random
+    $ python mhe.py game 10000 p_computer p_random
 
 Next, copy `p_random.py` to `p_bot.py`, implement `play()` and
 optionally `observe()`, then play your bot against random:

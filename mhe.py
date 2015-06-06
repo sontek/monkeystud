@@ -1,41 +1,9 @@
 # mhe.py -- Monkey Hold 'em, a poker variant
 
-# Monkey Hold 'em is a poker variant, suitable for computer play.
-
-# The game is played with a 32 card deck, only the duece through
-# nine are used. The best three card hand made from one hole card
-# and three community cards wins the hand. The hand ranks are:
-# high card, pair, straight, flush, trips, straight flush.
-# Seats are shuffled every hand. Ante is 1% of player's chip count.
-# There are no-limit, check-raise allowed, betting rounds after the 
-# hole card, flop, turn, and river.
-
-# A bot must implement the play() function, and optionally observe().
-
-# play() takes three arguments: my_id, stack, to_call; and should
-# return the number of chips to bet.
-#
-# observe() takes four arguments: my_id, player_id, action, argument;
-# return value is ignored.
-#
-# action is one of:
-#
-#   S   SIT         player sits down with <argument> chips
-#   A   ANTE        player antes <argument> chips
-#   H   HOLE        player is dealt <argument> hole card
-#   D   DOWN        player is dealt <argument> face down
-#   U   UP          player is dealt <argument> face up
-#   B   BET         player bets <argument> chips
-#   F   FOLD        player folds
-#   C   COMMUNITY   dealer flips <argument> community card
-#   R   REVEAL      dealer reveals <argument> card after a showdown
-#   W   WIN         dealar awards <argument> chips to player
-
 import random, sys, itertools
 
 RANKS   = 8
 SUITS   = 4
-ANTE    = 0.01
 
 HIGH    = 0
 PAIR    = 1
@@ -43,15 +11,6 @@ STR     = 2
 FLUSH   = 3
 TRIP    = 4
 STRF    = 5
-
-CLASS_STR = [
-        'high-card',
-        'pair',
-        'straight',
-        'flush',
-        'trips',
-        'straight-flush',
-]
 
 
 def call_player(player, foo, args, default, catch_exceptions):
@@ -118,20 +77,12 @@ def hand_str(h):
     return ' '.join(map(lambda x : card_str(x), h))
 
 
-def class_str(x):
-    return CLASS_STR[x >> 28]
-
-
-def deck():
+def new_deck():
     d = []
     for i in range(SUITS):
         for j in range(1, RANKS + 1):
             d.append(make_card(j, i))
     return d
-
-
-def shuffle(d):
-    random.shuffle(d)
 
 
 def classify_hand3(a, b, c):
@@ -225,8 +176,10 @@ def play_hand(players, catch):
     # ante
     #
     pot = 0
+    n = 0
     for i in players:
-        x = math.ceil(i[4] * ANTE)
+        n += 1
+        x = math.ceil(i[4] >> n)
         i[4] -= x
         pot += x
         observe(players, 'A', i[0], x, catch)
@@ -237,10 +190,11 @@ def play_hand(players, catch):
 
     # deal hole cards
     #
-    d = deck()
-    shuffle(d)
+    d = new_deck()
+    random.shuffle(d)
     for i in players:
         hole = d.pop()
+        i.append(hole)
         observe(players, 'D', i[0], 0, catch)
         observe((i, ), 'H', i[0], hole, catch)
     
@@ -299,11 +253,14 @@ def play_hand(players, catch):
 
     # reveal
     #
-    observe(players, 'R', i[0], i[4], catch)
-    
+    for i in players:
+        if False == i[5]:
+            observe(players, 'R', i[0], i[6])
+
     # walk pots and pay people
     #
     # TODO:
+
     return
 
 
