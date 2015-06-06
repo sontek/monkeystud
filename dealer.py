@@ -124,6 +124,11 @@ def play_hand(players, dealer):
     community = []
     for i in ('D', 'F', 'T', 'R'):
 
+        # all done?
+        # 
+        if 1 == len(players_in_hand):
+            break
+
         # first deal the community card
         #
         if i in ('F', 'T', 'R'):
@@ -136,7 +141,7 @@ def play_hand(players, dealer):
         raised_to = blind
         last_raise = None
         action = 0
-        while 1:
+        while 1 < len(players_in_hand):
 
             # advance action
             #

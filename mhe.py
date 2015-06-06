@@ -108,5 +108,5 @@ def best_hand3(h):
         x = classify_hand3(*i)
         if None == best or x > best:
             best = x
-    return x
+    return best
 
