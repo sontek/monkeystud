@@ -1,5 +1,5 @@
 # p_allin.py -- always go all in
 
-def play(my_id, stack, to_call):
-	return stack
+def bet(chips, to_call):
+	return chips
 

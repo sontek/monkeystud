@@ -3,8 +3,6 @@
 import random
 
 
-def play(my_id, stack, to_call):
-    if 0 == random.randint(0, 1):
-        return 0
-    return stack
+def bet(chips, to_call):
+    return random.choice((0, chips))
 

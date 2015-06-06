@@ -29,6 +29,7 @@ return value is ignored.
     U   UP          player is dealt <argument> face up
     B   BET         player bets <argument> chips
     F   FOLD        player folds
+    I   IN          player goes all in for <argument> chips
     C   COMMUNITY   dealer reveals <argument> community card
     R   REVEAL      dealer reveals <argument> card after a showdown
     W   WIN         dealar awards <argument> chips to player
