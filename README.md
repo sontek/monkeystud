@@ -1,66 +1,66 @@
-Roshambolo
-==========
+Monkey Hold 'em
+===============
 
-Roshambolo is roshambo (or Rock-Paper-Scissors) with no ties.
+Monkey Hold 'em is a poker variant, suitable for computer play.
 
-Rock beats scissors, scissors beats paper, paper beats rock.
+The game is played with a 32 card deck, only the duece through
+nine are used. The best three card hand made from one hole card
+and three community cards wins the hand. The hand ranks are:
+high card, pair, straight, flush, trips, straight flush.
+Seats are shuffled every hand. Ante is 1% of player's chip count.
+There are no-limit, check-raise allowed, betting rounds after the 
+hole card, flop, turn, and river.
 
-However, if there are is a tie, the player who has played that shape
-more often in the game, wins. If each player has played that shape the
-same number of times, then the player who has played the shape that
-beats it more wins. If still tied, then a coin is tossed.
+A bot must implement the `play()` function, and optionally `observe()`.
 
-For example, if both players play "Rock", then the player who
-has played "Rock" more often wins. If both players have played
-"Rock" the same amount of times, she who played "Paper" more wins.
+`play()` takes three arguments: `my_id`, `stack`, `to_call`; and should
+return the number of chips to bet.
 
-You write a robot by implementing the `play()` function:
+`observe()` takes four arguments: `my_id`, `player_id`, `action`, `argument`;
+return value is ignored.
 
-    def play(game_id, my_id, opponent_id):
-        pass
+`action` is one of:
 
-`game_id` identifies the game, `my_id` is a unique identifier for
-your player, `opponent_id` identifies your opponent. Return 1 for
-rock, 2 for paper, or 3 for scissors.
-
-You will also be called to observe all results, even for games in
-which you are not a participant:
-
-    def observe(game_id, a_id, b_id, a_play, b_play, result):
-        pass
-
-`result` is 0 if "a" won the last game, 1 if "b" won.
+    S   SIT         player sits down with <argument> chips
+    A   ANTE        player antes <argument> chips
+    H   HOLE        player is dealt <argument> hole card
+    D   DOWN        player is dealt <argument> face down
+    U   UP          player is dealt <argument> face up
+    B   BET         player bets <argument> chips
+    F   FOLD        player folds
+    C   COMMUNITY   dealer reveals <argument> community card
+    R   REVEAL      dealer reveals <argument> card after a showdown
+    W   WIN         dealar awards <argument> chips to player
 
 To get a copy of the game:
 
-    $ git clone https://github.com/colinmsaunders/roshambolo.git
-    $ cd roshambolo
+    $ git clone https://github.com/colinmsaunders/mhe.git
+    $ cd mhe
 
-To play a race to 3, human against computer:
+To play a game, human against computer:
 
-    $ python roshambolo.py human 3 p_random
+    $ python roshambolo.py human 3 p_computer
 
-To play first to 100 rock against random:
+To play a game betweent computer and random, starting with 10,000 chips:
 
-    $ python roshambolo.py game 100 p_rock p_random
+    $ python roshambolo.py game 10000 p_computer p_random
 
 Next, copy `p_random.py` to `p_bot.py`, implement `play()` and
 optionally `observe()`, then play your bot against random:
 
     $ cp p_random.py p_bot.py
-    $ python roshambolo.py game 100 p_bot p_random
+    $ python mhe.py game 10000 p_bot p_random
 
-To play a round robin tournament of 100 games each to 1000:
+To play a tournament of 100 games each with 10,000 chips:
 
-    $ python roshambolo.py tourney 100 1000 p_bot p_random p_rock
+    $ python mhe.py tourney 100 10000 p_bot p_random p_computer
 
 The winner of the tournament is the player who wins the most games,
-in total. Note that `player_id` is consistent across games, but shape
-counts are reset between each game.
+in total. Note that `player_id` is consistent across games.
 
-To time your robot (to make sure it's not too slow, compared to `p_rock`):
+To time your robot (to make sure it's not too slow, compared to `p_random`):
 
-    $ python roshambolo.py time p_bot
+    $ python mhe.py time p_bot
 
 Have fun!
 
