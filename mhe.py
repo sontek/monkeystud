@@ -1,5 +1,12 @@
 # mhe.py -- Monkey Hold 'em, a poker variant
 
+# deuce through 9; 3 card hands. 
+# 1 hole card, 1 flop, 1 turn, 1 river.
+# seats shuffled between every hand.
+# blinds are 1/2, 1/4, ...
+
+# see README.md for more dox
+
 import random, sys, itertools
 
 RANKS   = 8
@@ -173,15 +180,16 @@ def play_hand(players, catch):
     for i in players:
         observe(players, 'S', i[0], i[4], catch)
 
-    # ante
+    # blinds
     #
-    pots = {None:0}
+    blinds = 0
+    pots = {}
     n = 0
     for i in players:
         n += 1
         x = math.ceil(i[4] >> n)
         i[4] -= x
-        pots[None] += x
+        blinds += x
         pots[i[0]] = 0
         observe(players, 'A', i[0], x, catch)
 
