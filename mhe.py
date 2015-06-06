@@ -7,6 +7,9 @@
 
 # see README.md for more dox
 
+import itertools
+
+
 RANKS   = 8
 SUITS   = 4
 

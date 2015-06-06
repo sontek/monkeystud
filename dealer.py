@@ -93,22 +93,21 @@ def play_hand(players, dealer):
     #
     players_in_hand = {}
     player_map = {}
+    paid_in = {}
     for i in players:
         dealer.observe(players, 'S', i.player_id, i.chips)
         players_in_hand[i.player_id] = 1
         player_map[i.player_id] = i
 
-    # blinds
+    # blind
     #
     pots = []
     pots.append([players_in_hand.keys(), 0])
-    n = 0
-    for i in players:
-        n += 1
-        x = i.chips >> n
-        i.chips -= x
-        pots[-1][1] += x
-        dealer.observe(players, 'A', i.player_id, x)
+    blind = players[0].chips // 2
+    players[0].chips -= blind
+    pots[-1][1] += blind
+    paid_in[players[0].player_id] = blind
+    dealer.observe(players, 'A', players[0].player_id, blind)
 
     # deal hole cards
     #
@@ -134,22 +133,19 @@ def play_hand(players, dealer):
 
         # next, betting round, repeat until nothing left to call
         #
-        raised_to = 0
+        raised_to = blind
         last_raise = None
-        paid_in = {}
-        action = None
+        action = 0
         while 1:
 
             # advance action
             #
-            if None == action:
-                action = 0
-            else:
-                while 1:
-                    action += 1
-                    if action < len(players) and \
-                            players[action].player_id in players_in_hand:
-                        break
+            while 1:
+                action += 1
+                if action == len(players):
+                    action = 0
+                if players[action].player_id in players_in_hand:
+                    break
             player = players[action]
 
             # all done?
@@ -211,7 +207,7 @@ def play_hand(players, dealer):
             for i in pot[0]:
                 player = player_map[i]
                 dealer.observe(players, 'R', player.player_id, player.hole)
-                player_hand = mhe.find_best3(community + player.hole)
+                player_hand = mhe.best_hand3(community + [player.hole, ])
                 if player_hand > best[0]:
                     best = [player_hand, [i, ]]
                 elif player_hand == best[0]:
@@ -285,7 +281,7 @@ if __name__ == '__main__':
         playernames = sys.argv[3:]
         players = []
         for player_id, playername in enumerate(playernames):
-            players.append(make_player(player_id, playername, False))
+            players.append(make_player(chr(ord('a') + player_id), playername, False))
         d = Dealer()
         d.observe = lambda w, x, y, z: observe(w, x, y, z, False)
         d.bet = lambda x, y, z: bet(x, y, z, False)
