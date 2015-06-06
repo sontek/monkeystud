@@ -27,7 +27,7 @@
 #   U   UP          player is dealt <argument> face up
 #   B   BET         player bets <argument> chips
 #   F   FOLD        player folds
-#   C   COMMUNITY   dealer reveals <argument> community card
+#   C   COMMUNITY   dealer flips <argument> community card
 #   R   REVEAL      dealer reveals <argument> card after a showdown
 #   W   WIN         dealar awards <argument> chips to player
 
@@ -102,43 +102,12 @@ def make_player(player_id, playername, catch_exceptions):
     return [player_id, playername, f_play, f_observe, 0.0]
 
 
-def play_game(players, chips):
-    """
-    players is a list of:
-        (player_id, player_name, bet(), observe())
-    return player_id of winner
-    """
-    entrants = []
-    for i in players:
-        entrants.append([i[0], i[1], i[2], i[3], chips])
-    while 1:
-        active_players = []
-        for i in entrants.values()
-            if i[4] > 0:
-                active_players.append([i[0], i[1], i[2], i[3], chips])
-        if 1 == len(active_players):
-            return active_players[0][0]
-        random.shuffle(active_players)
-        play_hand(active_players)
-
-
-def play_tournament(players, chips, games):
-    """
-    players is a list of:
-        [player_id, player_name, bet(), observe()]
-    return a map of player_id to wins
-    """
-    wins = {}
-    for i in range(games):
-        winner = play_game(players, chips)
-        if not wins.has_key(winner):
-            wins[winner] = 0
-        wins[winner] += 1
-    return wins
-
-
-def makecard(r, s):
+def make_card(r, s):
     return (r << 3) | s
+
+
+def rank_suit(c):
+    return c >> 3, c & 7
 
 
 def card_str(a):
@@ -157,7 +126,7 @@ def deck():
     d = []
     for i in range(SUITS):
         for j in range(1, RANKS + 1):
-            d.append(makecard(j, i))
+            d.append(make_card(j, i))
     return d
 
 
@@ -231,17 +200,17 @@ def best_hand3(h):
     return x
 
 
-def bet(player, stack, to_call):
-    x = player[2](player[0], stack, to_call)
+def bet(player, stack, to_call, catch):
+    x = call_player(player, player[2], (player[0], stack, to_call), 0, catch)
     return x
 
 
-def observe(players, action, player_id, argument):
+def observe(players, action, player_id, argument, catch):
     for i in players:
-        i[3](i[0], action, player_id, argument)
+        call_player(i, i[2], (i[0], action, player_id, argument), None, catch)
 
 
-def play_hand(players):
+def play_hand(players, catch):
     """
     players is a list of:
         [player_id, player_name, bet(), observe(), chips]
@@ -251,7 +220,7 @@ def play_hand(players):
     # sit
     #
     for i in players:
-        observe(players, 'S', i[0], i[4])
+        observe(players, 'S', i[0], i[4], catch)
 
     # ante
     #
@@ -260,7 +229,7 @@ def play_hand(players):
         x = math.ceil(i[4] * ANTE)
         i[4] -= x
         pot += x
-        observe(players, 'A', i[0], x)
+        observe(players, 'A', i[0], x, catch)
 
         # not folded yet
         #
@@ -272,8 +241,8 @@ def play_hand(players):
     shuffle(d)
     for i in players:
         hole = d.pop()
-        observe(players, 'D', i[0], 0)
-        observe((i, ), 'H', i[0], hole)
+        observe(players, 'D', i[0], 0, catch)
+        observe((i, ), 'H', i[0], hole, catch)
     
     # betting rounds
     #
@@ -285,7 +254,7 @@ def play_hand(players):
         if i in ('F', 'T', 'R'):
             c = d.pop()
             community.append(c)
-            observe(players, 'C', None, c)
+            observe(players, 'C', None, c, catch)
 
         # next, betting round, repeat until nothing left to call
         #
@@ -308,20 +277,20 @@ def play_hand(players):
 
                 # all in?
                 #
-                if x == i[4]:
+                if 0 == i[4] and False == i[5]:
                     # TODO:
                     pass 
 
                 # fold?
                 #
                 elif x < to_call:
-                    observe(players, 'F', i[0], None)
+                    observe(players, 'F', i[0], None, catch)
                     i[5] = True
 
                 # nope, bet
                 #
                 else:
-                    observe(players, 'B', i[0], x)
+                    observe(players, 'B', i[0], x, catch)
                     pot += x
                     i[4] -= x
                     
@@ -330,12 +299,47 @@ def play_hand(players):
 
     # reveal
     #
-    observe(players, 'R', i[0], i[4])
+    observe(players, 'R', i[0], i[4], catch)
     
     # walk pots and pay people
     #
     # TODO:
     return
+
+
+def play_game(players, chips, catch):
+    """
+    players is a list of:
+        (player_id, player_name, bet(), observe())
+    return player_id of winner
+    """
+    entrants = []
+    for i in players:
+        entrants.append([i[0], i[1], i[2], i[3], chips])
+    while 1:
+        active_players = []
+        for i in entrants.values()
+            if i[4] > 0:
+                active_players.append([i[0], i[1], i[2], i[3], chips])
+        if 1 == len(active_players):
+            return active_players[0][0]
+        random.shuffle(active_players)
+        play_hand(active_players, catch)
+
+
+def play_tournament(players, chips, games, catch):
+    """
+    players is a list of:
+        [player_id, player_name, bet(), observe()]
+    return a map of player_id to wins
+    """
+    wins = {}
+    for i in range(games):
+        winner = play_game(players, chips, catch)
+        if not wins.has_key(winner):
+            wins[winner] = 0
+        wins[winner] += 1
+    return wins
 
 
 if __name__ == '__main__':
@@ -353,7 +357,7 @@ if __name__ == '__main__':
         players = []
         for player_id, playername in enumerate(playernames):
             players.append(make_player(player_id, playername, True))
-        winner = play_game(players, chips)
+        winner = play_game(players, chips, False)
         sys.exit()
 
     elif 'tournament' == c:
@@ -365,6 +369,6 @@ if __name__ == '__main__':
         players = []
         for player_id, playername in enumerate(playernames):
             players.append(make_player(player_id, playername, False))
-        wins = play_tournament(players, chips, games)
+        wins = play_tournament(players, chips, games, True)
         sys.exit()
 
