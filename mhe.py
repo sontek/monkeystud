@@ -175,13 +175,14 @@ def play_hand(players, catch):
 
     # ante
     #
-    pot = 0
+    pots = {None:0}
     n = 0
     for i in players:
         n += 1
         x = math.ceil(i[4] >> n)
         i[4] -= x
-        pot += x
+        pots[None] += x
+        pots[i[0]] = 0
         observe(players, 'A', i[0], x, catch)
 
         # not folded yet
@@ -212,8 +213,9 @@ def play_hand(players, catch):
 
         # next, betting round, repeat until nothing left to call
         #
-        to_call = 0
+        raised = 0
         while 1:
+            any_raises = False
             for i in players:
 
                 # folded, or all in? just continue
@@ -223,21 +225,16 @@ def play_hand(players, catch):
 
                 # get their bet
                 #
-                x = bet(i, i[4], pot, to_call)
+                to_call = raised - pots[i[0]]
+                x = bet(i, i[4], to_call)
                 if x < to_call:
                     x = 0
                 if x > i[4]:
                     x = i[4]
 
-                # all in?
-                #
-                if 0 == i[4] and False == i[5]:
-                    # TODO:
-                    pass 
-
                 # fold?
                 #
-                elif x < to_call:
+                if x < to_call:
                     observe(players, 'F', i[0], None, catch)
                     i[5] = True
 
@@ -245,10 +242,13 @@ def play_hand(players, catch):
                 #
                 else:
                     observe(players, 'B', i[0], x, catch)
-                    pot += x
+                    pots[i[0]] += x
                     i[4] -= x
+                    if x > to_call:
+                        raised += to_call
+                        any_raises = True
                     
-        if 0 == to_call:
+        if not any_raises:
             break
 
     # reveal
