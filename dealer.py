@@ -4,27 +4,20 @@
 
 import random, sys, itertools, logging, imp, time
 
-import mhe
-
+import monkeystud
 
 class Player():
     pass
 
 
-class Dealer():
-    pass
-
-
-def call_player(player, foo, args, default, catch_exceptions):
+def call_player(player, args, default):
     result = default
     start = time.clock()
     try:
-        result = foo(*args)
+        result = player.foo(*args)
     except KeyboardInterrupt:
         raise
     except:
-        if not catch_exceptions:
-            raise
         logging.warn('caught exception "%s" calling %s (%s)'
                      % (sys.exc_info()[1], player.player_id, player.playername))
     elapsed = time.clock() - start
@@ -32,23 +25,21 @@ def call_player(player, foo, args, default, catch_exceptions):
     return result
 
 
-def make_player(player_id, playername, catch_exceptions):
+def make_player(player_id, playername):
     fp = pathname = description = m = None
     try:
         fp, pathname, description = imp.find_module(playername)
     except:
-        if not catch_exceptions:
-            raise
         logging.warn('caught exception "%s" finding module %s'
                      % (sys.exc_info()[1], playername))
+        raise
     try:
         if fp:
             m = imp.load_module(playername, fp, pathname, description)
     except:
-        if not catch_exceptions:
-            raise
         logging.warn('caught exception "%s" importing %s'
                      % (sys.exc_info()[1], playername))
+        raise
     finally:
         if fp:
             fp.close()
@@ -59,27 +50,16 @@ def make_player(player_id, playername, catch_exceptions):
     p.player_id = player_id
     p.playername = playername
 
-    p.f_bet = None
-    if hasattr(m, 'bet'):
-        p.f_bet = getattr(m, 'bet')
-    p.f_observe = None
-    if hasattr(m, 'observe'):
-        p.f_observe = getattr(m, 'observe')
+    p.foo = None
+    if hasattr(m, 'play'):
+        p.foo = getattr(m, 'play')
     p.elapsed = 0.0
     return p
 
 
-def bet(player, stack, to_call, catch):
-    x = call_player(player, player.f_bet, (stack, to_call), 0, catch)
+def get_bet(player, args, 0):
+    x = call_player(player, (stack, to_call), 0)
     return x
-
-
-def observe(players, action, player_id, argument, catch):
-    for i in players:
-        if None == i.f_observe:
-            continue
-        call_player(i, i.f_observe, 
-                    (i.player_id, action, player_id, argument), None, catch)
 
 
 def play_hand(players, dealer):
@@ -90,7 +70,7 @@ def play_hand(players, dealer):
     # sit
     #
     random.shuffle(players)
-    d = mhe.new_deck()
+    d = monkeystud.new_deck()
     random.shuffle(d)
     for i in players:
         dealer.observe(players, 'S', i.player_id, i.chips)
@@ -228,13 +208,13 @@ def play_hand(players, dealer):
     return
 
 
-def play_game(players, chips, dealer):
+def play_game(players):
     """
     play a game with chips, return winner
     """
     entrants = []
     for i in players:
-        i.chips = chips
+        i.chips = monkeystud.CHIPS_START
         entrants.append(i)
     while 1:
         active_players = []
@@ -244,16 +224,16 @@ def play_game(players, chips, dealer):
         if 1 == len(active_players):
             return active_players[0]
         random.shuffle(active_players)
-        play_hand(active_players, dealer)
+        play_hand(active_players)
 
 
-def play_tournament(players, chips, games, dealer):
+def play_tournament(games, players):
     """
     play many games, return map of player_id to wins
     """
     wins = {}
     for i in range(games):
-        winner = play_game(players, chips, dealer)
+        winner = play_game(players)
         if not wins.has_key(winner.player_id):
             wins[winner.player_id] = 0
         wins[winner.player_id] += 1
@@ -270,30 +250,31 @@ if __name__ == '__main__':
     elif 'game' == c:
         logging.basicConfig(level=logging.INFO, 
                             format='%(message)s', stream=sys.stdout)
-        chips = int(sys.argv[2])
-        playernames = sys.argv[3:]
+        playernames = sys.argv[2:]
         players = []
         for player_id, playername in enumerate(playernames):
-            players.append(make_player(chr(ord('a') + player_id), playername, \
-                    False))
-        d = Dealer()
-        d.observe = lambda w, x, y, z: observe(w, x, y, z, False)
-        d.bet = lambda x, y, z: bet(x, y, z, False)
-        winner = play_game(players, chips, d)
+            players.append(make_player(chr(ord('a') + player_id), playername))
+        winner = play_game(players)
         sys.exit()
 
     elif 'tournament' == c:
         logging.basicConfig(level=logging.INFO, 
                             format='%(message)s', stream=sys.stdout)
         games = int(sys.argv[2])
-        chips = int(sys.argv[3])
-        playernames = sys.argv[4:]
+        playernames = sys.argv[3:]
         players = []
         for player_id, playername in enumerate(playernames):
-            players.append(make_player(player_id, playername, True))
-        d = Dealer()
-        d.observe = lambda w, x, y, z: observe(w, x, y, z, True)
-        d.bet = lambda x, y, z: bet(x, y, z, True)
-        wins = play_tournament(players, chips, games, d)
+            players.append(make_player(player_id, playername))
+        wins = play_tournament(games, players)
+        sys.exit()
+
+    elif 'time' == c:
+        playername = sys.argv[3]
+        p1 = make_player(1, playername)
+        p2 = make_player(1, 'p_random')
+        print('playing 100 games against random ...')
+        play_tournament(100, players)
+        print('random: %f seconds, %s: %f seconds; %s is %.2fx slower' \
+                % (p1.elapsed, p2.elapsed, p2 / p1))
         sys.exit()
 

@@ -1,15 +1,11 @@
 # monkeystud.py -- Monkey Stud, a poker variant
 
-# Stud poker, 3 card hands, only using deuce through 9.
-# All seats shuffled before every hand. Everyone antes.
-# 1 hole card down, 1 up, followed by a betting round,
-# then 1 more up, and a final betting round.
-# First highest hand leads betting round.
-
 # see README.md for more dox
 
 import itertools
 
+
+CHIPS_START = 100
 
 RANKS   = 8
 SUITS   = 4
