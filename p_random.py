@@ -1,8 +1,8 @@
-# p_random.py -- fold 1/4 of the time, call 1/4, all-in 1/4, random raise 1/4
+# p_random.py -- randomly fold, call, bet
 
 import random
 
 
-def bet(chips, to_call):
-    return random.choice((0, to_call, chips, random.randint(to_call, chips)))
+def play(player_id, hand, state):
+    return random.choice(('F', 'C', 'B'))
 

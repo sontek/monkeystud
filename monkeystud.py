@@ -1,9 +1,10 @@
-# mhe.py -- Monkey Hold 'em, a poker variant
+# monkeystud.py -- Monkey Stud, a poker variant
 
-# deuce through 9; 3 card hands. 
-# 1 hole card, 1 flop, 1 turn, 1 river.
-# seats shuffled between every hand.
-# blinds are 1/2, 1/4, ...
+# Stud poker, 3 card hands, only using deuce through 9.
+# All seats shuffled before every hand. Everyone antes.
+# 1 hole card down, 1 up, followed by a betting round,
+# then 1 more up, and a final betting round.
+# First highest hand leads betting round.
 
 # see README.md for more dox
 
@@ -30,7 +31,7 @@ def rank_suit(c):
 
 
 def card_str(a):
-    return "%0X%s" % (((a + 1) >> 3), 'cdhswxyz'[a & 7])
+    return "%s%s" % ('?23456789TJQKABC'[a >> 3], 'cdhswxyz'[a & 7])
 
 
 def hand_str(h):
@@ -99,14 +100,4 @@ def classify_hand3(a, b, c):
     else:
         x |= (HIGH << 28)
     return x
-
-
-def best_hand3(h):
-    "find best three card hand in array of cards"
-    best = None
-    for i in itertools.combinations(h, 3):
-        x = classify_hand3(*i)
-        if None == best or x > best:
-            best = x
-    return best
 

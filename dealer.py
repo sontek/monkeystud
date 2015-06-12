@@ -1,4 +1,4 @@
-# dealer.py -- Monkey Hold 'em dealer
+# dealer.py -- MonkeyStud dealer
 
 # see README.md for more dox
 
@@ -84,103 +84,91 @@ def observe(players, action, player_id, argument, catch):
 
 def play_hand(players, dealer):
     """
-    players is a list of:
-        [player_id, player_name, bet(), observe(), chips]
     shuffle seats, play a hand, update chips
     """
     
     # sit
     #
-    players_in_hand = {}
-    player_map = {}
-    paid_in = {}
-    for i in players:
-        dealer.observe(players, 'S', i.player_id, i.chips)
-        players_in_hand[i.player_id] = 1
-        player_map[i.player_id] = i
-
-    # blind
-    #
-    pots = []
-    pots.append([players_in_hand.keys(), 0])
-    blind = players[0].chips // 2
-    players[0].chips -= blind
-    pots[-1][1] += blind
-    paid_in[players[0].player_id] = blind
-    dealer.observe(players, 'A', players[0].player_id, blind)
-
-    # deal hole cards
-    #
+    random.shuffle(players)
     d = mhe.new_deck()
     random.shuffle(d)
     for i in players:
-        hole = d.pop()
-        i.hole = hole
-        dealer.observe(players, 'D', i.player_id, 0)
-        dealer.observe((i, ), 'H', i.player_id, hole)
-    
-    # betting rounds
+        dealer.observe(players, 'S', i.player_id, i.chips)
+        i.hand = []
+        i.paid = 0
+        i.folded = False
+
+    # state machine
     #
-    community = []
-    for i in ('D', 'F', 'T', 'R'):
+    pot = 0
+    raised_to = 0
+    for state in ('D', 'U', 'B', 'U', 'B'):
 
-        # all done?
-        # 
-        if 1 == len(players_in_hand):
-            break
+        if 0:
+            pass
 
-        # first deal the community card
+        # ante
         #
-        if i in ('F', 'T', 'R'):
-            c = d.pop()
-            community.append(c)
-            dealer.observe(players, 'C', None, c)
-
-        # next, betting round, repeat until nothing left to call
-        #
-        raised_to = blind
-        last_raise = None
-        action = 0
-        while 1 < len(players_in_hand):
-
-            # advance action
+        elif 'A' == state:
+            
+            # ante is minimum of players' chip counts and 
+            # sum of chips / number of players
             #
+            sum_chips = 0
+            min_chips = players[0].chips
+            for i in players:
+                sum_chips += i.chips
+                if i.chips < min_chips:
+                    min_chips = i.chips
+            ante = min(min_chips, sum_chips / (2 * len(players)))
+            raised_to = ante
+            for i in players:
+                pot += ante
+                i.chips -= ante
+                i.paid += ante
+                dealer.observe(players, 'A', i.player_id, ante)
+
+        # hole card
+        #
+        elif 'D' == state:
+            for i in players:
+                if i.folded:
+                    continue
+                card = d.pop()
+                i.hand.append(card)
+                dealer.observe(players, 'D', i.player_id, 0)
+                dealer.observe((i, ), 'H', i.player_id, card)
+
+        # face up
+        #
+        elif 'U' == state:
+            for i in players:
+                if i.folded:
+                    continue
+                card = d.pop()
+                i.hand.append(card)
+                dealer.observe(players, 'U', i.player_id, card)
+    
+        # betting round
+        #
+        elif 'B' == state:
+
             while 1:
-                action += 1
-                if action == len(players):
-                    action = 0
-                if players[action].player_id in players_in_hand:
-                    break
-            player = players[action]
 
-            # all done?
-            #
-            if last_raise == player.player_id:
-                break
-            if None == last_raise:
-                last_raise = player.player_id
+                for i in players:
+                    if i.folded:
+                        continue
+                    if 0 == i.chips:
+                        continue
+                    
 
-            # get their bet
-            #
-            player_paid_in = paid_in.get(player.player_id, 0)
-            to_call = raised_to - player_paid_in
-            x = dealer.bet(player, player.chips, to_call)
-            if x == player.chips:
-                pass
-            elif x < to_call:
-                x = 0
-            elif x > player.chips:
-                x = player.chips
-            paid_in[player.player_id] = player_paid_in + x
-
-            # all in?
-            #
-            if x == player.chips:
-                del players_in_hand[player.player_id]
-                dealer.observe(players, 'I', player.player_id, x)
-                pots[-1][1] += x
-                player.chips -= x
-                pots.append([players_in_hand.keys(), 0])
+            max_bet = 0
+            for i in players:
+                if i.folded
+                    continue
+                if None == max_bet or i.chips < max_bet:
+                    max_bet = i.chips
+            
 
             # fold?
             #
@@ -286,7 +274,8 @@ if __name__ == '__main__':
         playernames = sys.argv[3:]
         players = []
         for player_id, playername in enumerate(playernames):
-            players.append(make_player(chr(ord('a') + player_id), playername, False))
+            players.append(make_player(chr(ord('a') + player_id), playername, \
+                    False))
         d = Dealer()
         d.observe = lambda w, x, y, z: observe(w, x, y, z, False)
         d.bet = lambda x, y, z: bet(x, y, z, False)
