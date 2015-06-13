@@ -6,16 +6,17 @@ import itertools
 
 
 CHIPS_START = 100
+ANTE        = (1, 100)
 
-RANKS   = 8
-SUITS   = 4
+RANKS       = 8
+SUITS       = 4
 
-HIGH    = 0
-PAIR    = 1
-STR     = 2
-FLUSH   = 3
-TRIP    = 4
-STRF    = 5
+HIGH        = 0
+PAIR        = 1
+STR         = 2
+FLUSH       = 3
+TRIP        = 4
+STRF        = 5
 
 
 def make_card(r, s):
@@ -42,7 +43,12 @@ def new_deck():
     return d
 
 
-def classify_hand3(a, b, c):
+def shuffle(d):
+    random.shuffle(d)
+    return d
+
+
+def classify_hand(a, b, c):
     "classify three card hand into a uint32 that obeys cardinality"
     x = 0
     ar = a >> 3
