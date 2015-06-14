@@ -5,8 +5,8 @@
 import random, sys, itertools, logging, imp, time, itertools
 
 
-CHIPS_START = 100               # each player starts with 100 chips
-ANTE        = 0.01              # ante is 1% total chip count each
+CHIPS_START = 64                # each player starts with 64 chips
+ANTE        = 6                 # ante is 1 / 64th total chip count each
 
 RANKS       = 8                 # duece through nine
 SUITS       = 4                 # clubs, diamonds, hearts, spades
@@ -235,14 +235,18 @@ def play_hand(players):
             # players, whatever is lower
             #
             sum_chips = 0
-            min_chips = players[0].chips
+            min_chips = None
             for i in players:
+                if 0 == i.chips:
+                    continue
                 sum_chips += i.chips
-                if i.chips < min_chips:
+                if None == min_chips or i.chips < min_chips:
                     min_chips = i.chips
-            ante = min(min_chips, int(sum_chips * ANTE) // len(players))
+            ante = min(min_chips, (sum_chips >> ANTE) // player_count)
             raised_to = ante
             for i in players:
+                if 0 == i.chips:
+                    continue
                 pot += ante
                 i.chips -= ante
                 i.paid += ante
@@ -305,17 +309,6 @@ def play_hand(players):
                 if players[action].played and players[action].paid == raised_to:
                     break
                 
-                # figure out the max bet
-                #
-                max_bet = pot
-                for i in players:
-                    if i.folded:
-                        continue
-                    if 0 == i.chips:
-                        continue
-                    if i.chips < max_bet:
-                        max_bet = i.chips
-
                 # get their play
                 # 
                 x = players[action].get_play(serialize_history(history))
@@ -360,7 +353,17 @@ def play_hand(players):
                                 to_call))
                         logging.debug('%s calls %d' % \
                                 (players[action].player_id, to_call))
-                    the_raise = max_bet - to_call
+
+                    # figure out the maximum raise
+                    #
+                    the_raise = pot
+                    for i in players:
+                        if i.folded:
+                            continue
+                        x = i.chips - (raised_to - i.paid)
+                        if x < the_raise:
+                            the_raise = x
+
                     if 0 != the_raise:
                         raised_to += the_raise
                         pot += the_raise
@@ -456,12 +459,13 @@ def play_tournament(games, players):
         winner.wins += 1
         t = ''
         for j in players:
-            t += '%s:%s:%d ' % (i.player_id, i.playername, i.wins)
+            t += '%s:%s:%d ' % (j.player_id, j.playername, j.wins)
         logging.info('WINS\t%s' % t)
 
 
 def main(argv):
 
+#    random.seed(''.join(argv))
     c = argv[1]
     
     if 0:
@@ -502,11 +506,13 @@ def main(argv):
     elif 'time' == c:
         playername = argv[3]
         p1 = make_player(1, playername)
-        p2 = make_player(1, 'p_random')
+        p2 = make_player(2, 'p_random')
         print('playing 100 games against random ...')
         play_tournament(100, players)
-        print('random: %f seconds, %s: %f seconds; %s is %.2fx slower' \
-                % (p1.elapsed, p2.elapsed, p2 / p1))
+        print('player: %f seconds, %d calls, %f per call' % \
+                (p1.elapsed, p1.calls, p1.elapsed / p1.calls))
+        print('random: %f seconds, %d calls, %f per call' % \
+                (p2.elapsed, p2.calls, p2.elapsed / p2.calls))
         sys.exit()
 
     elif 'deck' == c:
