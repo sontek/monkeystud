@@ -1,4 +1,4 @@
-# monkeystud.py -- MonkeyStud, poker variant
+# monkeystud.py -- MonkeyStud, a poker variant for bots
 
 # see README.md for more dox
 
@@ -31,11 +31,11 @@ def rank_suit(c):
 
 
 def rank_str(r):
-    return '23456789TJQKABC'[r]
+    return '23456789'[r]
 
 
 def suit_str(s):
-    return 'cdhswxyz'[s]
+    return 'cdhs'[s]
 
 
 def card_str(a):
@@ -153,6 +153,7 @@ def call_player(player, args, default):
             raise
     elapsed = time.clock() - start
     player.elapsed += elapsed
+    player.calls += 1
     return result
 
 
@@ -183,6 +184,7 @@ def make_player(player_id, playername):
     if hasattr(m, 'play'):
         p.play = getattr(m, 'play')
     p.elapsed = 0.0
+    p.calls = 0
     p.get_play = lambda x: call_player(p, (p.player_id, p.hand, x), 'F')
     return p
 
@@ -207,13 +209,17 @@ def play_hand(players):
     random.shuffle(players)
     d = new_deck()
     random.shuffle(d)
-    player_count = len(players)
+    player_count = 0
     for seat, i in enumerate(players):
-        i.hand = []
-        i.paid = 0
-        i.folded = False
-        history.append((i.player_id, 'S', seat))
-        logging.debug('%s sits down at seat %d' % (i.player_id, seat))
+        if 0 == i.chips:
+            i.folded = True
+        else:
+            player_count += 1
+            i.hand = []
+            i.paid = 0
+            i.folded = False
+            history.append((i.player_id, 'S', seat))
+            logging.debug('%s sits down at seat %d' % (i.player_id, seat))
 
     # state machine
     #
@@ -344,7 +350,7 @@ def play_hand(players):
 
                 # bet?
                 #
-                if 'B' == x:
+                if 'R' == x:
                     to_call = raised_to - players[action].paid
                     if 0 != to_call:
                         pot += to_call
@@ -355,14 +361,16 @@ def play_hand(players):
                         logging.debug('%s calls %d' % \
                                 (players[action].player_id, to_call))
                     the_raise = max_bet - to_call
-                    raised_to += the_raise
-                    pot += the_raise
-                    players[action].paid += the_raise
-                    players[action].chips -= the_raise
-                    history.append((players[action].player_id, 'B', the_raise))
-                    logging.debug('%s raises %d' % \
-                            (players[action].player_id, the_raise))
-                    last_action = action
+                    if 0 != the_raise:
+                        raised_to += the_raise
+                        pot += the_raise
+                        players[action].paid += the_raise
+                        players[action].chips -= the_raise
+                        history.append((players[action].player_id, 'R', \
+                                the_raise))
+                        logging.debug('%s raises %d' % \
+                                (players[action].player_id, the_raise))
+                        last_action = action
 
     # end of hand, figure out who won
     #
@@ -375,7 +383,7 @@ def play_hand(players):
     #
     if 1 != len(remaining_players):
         for i in remaining_players:
-            history.append((i.player_id, 'R', hand_str(i.hand)))
+            history.append((i.player_id, 'H', hand_str(i.hand)))
             logging.debug('%s reveals %s' % (i.player_id, hand_str(i.hand)))
     
     # find the winner(s)
@@ -409,8 +417,9 @@ def play_hand(players):
 
     # show everyone what happened
     #
+    serialized_history = serialize_history(history)
     for i in players:
-        i.get_play(serialize_history(history))
+        i.get_play(serialized_history)
 
     # all done.
     #
@@ -421,34 +430,34 @@ def play_game(players):
     """
     play a game with chips, return winner
     """
-    entrants = []
     for i in players:
         i.chips = CHIPS_START
-        entrants.append(i)
     while 1:
-        active_players = []
         t = ''
-        for i in entrants:
-            if i.chips > 0:
-                active_players.append(i)
-            t += '%s:%d ' % (i.player_id, i.chips)
+        winner = None
+        for i in players:
+            t += '%s:%s:%d ' % (i.player_id, i.playername, i.chips)
+            if i.chips == (len(players) * CHIPS_START):
+                winner = i
         logging.info('CHIPS\t%s' % t)
-        if 1 == len(active_players):
-            return active_players[0]
-        play_hand(active_players)
+        if None != winner:
+            return winner
+        play_hand(players)
 
 
 def play_tournament(games, players):
     """
     play many games, return map of player_id to wins
     """
-    wins = {}
+    for i in players:
+        i.wins = 0
     for i in range(games):
         winner = play_game(players)
-        if not wins.has_key(winner.player_id):
-            wins[winner.player_id] = 0
-        wins[winner.player_id] += 1
-    return wins
+        winner.wins += 1
+        t = ''
+        for j in players:
+            t += '%s:%s:%d ' % (i.player_id, i.playername, i.wins)
+        logging.info('WINS\t%s' % t)
 
 
 def main(argv):
@@ -487,7 +496,7 @@ def main(argv):
         players = []
         for player_id, playername in enumerate(playernames):
             players.append(make_player(player_id, playername))
-        wins = play_tournament(games, players)
+        play_tournament(games, players)
         sys.exit()
 
     elif 'time' == c:

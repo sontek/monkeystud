@@ -18,9 +18,9 @@ A play is either fold, call, or raise. The raise amount is the size of
 the pot, but no more than any one player's stack.
 
 A bot must implement the `play()` function. play() should return either
-'F', 'C', or 'B' for Fold, Call, or Bet, respectfully. Play takes three
-arguments: `player_id`, `hand`, `chips`, `pot`, `to_call`, and `history`. 
-`history` is a serialization of the action so far.
+'F', 'C', or 'R' for Fold, Call, or Raise. Play takes three
+arguments: `player_id`, `hand`, and `history`. `history` is a serialization
+of the action so far.
 
 To get a copy of the game:
 
@@ -29,28 +29,28 @@ To get a copy of the game:
 
 To play against the computer:
 
-    $ python dealer.py human p_computer
+    $ python monkeystud.py human
 
 To play a game between computer and random:
 
-    $ python dealer.py game p_computer p_random
+    $ python monkeystud.py game p_computer p_random
 
-Next, copy `p_computer.py` to `p_bot.py`, implement `play()` and
+Next, copy `p_computer.py` to `p_mybot.py`, implement `play()` and
 then play your bot against computer:
 
-    $ cp p_computer.py p_bot.py
-    $ python dealer.py game p_bot p_computer
+    $ cp p_computer.py p_mybot.py
+    $ python monkeystud.py game p_mybot p_computer
 
 To play a tournament of 100 games:
 
-    $ python dealer.py tourney 100 p_bot p_random p_computer
+    $ python monkeystud.py tourney 100 p_bot p_random p_computer
 
 The winner of the tournament is the player who wins the most games,
 in total. Note that `player_id` is consistent across games.
 
 To time your robot (to make sure it's not too slow, compared to `p_random`):
 
-    $ python dealer.py time p_bot
+    $ python dealer.py time p_mybot
 
 Have fun!
 

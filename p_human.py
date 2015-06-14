@@ -14,7 +14,7 @@ def play(player_id, hand, history):
 
     s = 'You are player "%s". Your hand is: %s\n'
     s += 'The pot is %d. What is your bet? '
-    s += '(Fold, Call, or Bet)' 
+    s += '(Fold, Call, or Raise)' 
     print s % (player_id, monkeystud.hand_str(hand), pot)
     s = None
     try:
@@ -26,8 +26,8 @@ def play(player_id, hand, history):
         return 'F'
     if s.startswith('C'):
         return 'C'
-    if s.startswith('B'):
-        return 'B'
+    if s.startswith('R'):
+        return 'R'
     print 'Invalid input. Folding.'
     return 'F'
 
