@@ -30,18 +30,48 @@ def rank_suit(c):
     return c >> 3, c & 7
 
 
+def rank_str(r):
+    return '23456789TJQKABC'[r]
+
+
+def suit_str(s):
+    return 'cdhswxyz'[s]
+
+
 def card_str(a):
-    return "%s%s" % ('?23456789TJQKABC'[a >> 3], 'cdhswxyz'[a & 7])
+    return "%s%s" % (rank_str(a >> 3), suit_str(a & 7))
 
 
 def hand_str(h):
     return ','.join(map(lambda x : card_str(x), h))
 
 
+def classification_str(x):
+    c = x >> 28
+    if HIGH == c:
+        return 'high card (%s, %s, %s)' % \
+                (rank_str((x >> 8) & 15), \
+                rank_str((x >> 4) & 15), rank_str(x & 15))
+    if PAIR == c:
+        return 'pair of %s\'s (%s, %s, %s)' % \
+                (rank_str((x >> 24) & 15), rank_str((x >> 8) & 15), \
+                rank_str((x >> 4) & 15), rank_str(x & 15))
+    if STR == c:
+        return 'straight to the %s' % rank_str((x >> 24) & 15)
+    if FLUSH == c:
+        return 'flush (%s, %s, %s)' % \
+                (rank_str((x >> 8) & 15), \
+                rank_str((x >> 4) & 15), rank_str(x & 15))
+    if TRIP == c:
+        return 'trip %s\'s' % rank_str((x >> 24) & 15)
+    if STRF == c:
+        return 'straight flush to the %s' % rank_str((x >> 24) & 15)
+
+
 def new_deck():
     d = []
     for i in range(SUITS):
-        for j in range(1, RANKS + 1):
+        for j in range(RANKS):
             d.append(make_card(j, i))
     return d
 
@@ -63,47 +93,35 @@ def classify_hand(a, b, c):
     if ar < br:
         if br < cr:
             h, m, l = cr, br, ar
-            x = (cr << 20) | (br << 16) | (ar << 12) | \
-                (ch << 8)  | (bh << 4)  | (ah)
         elif ar < cr:
             h, m, l = br, cr, ar
-            x = (br << 20) | (cr << 16) | (ar << 12) | \
-                (bh << 8)  | (ch << 4)  | (ah)
         else:
             h, m, l = br, ar, cr
-            x = (br << 20) | (ar << 16) | (cr << 12) | \
-                (bh << 8)  | (ah << 4)  | (ch)
     else:
         if ar < cr:
             h, m, l = cr, ar, br
-            x = (cr << 20) | (ar << 16) | (br << 12) | \
-                (ch << 8)  | (ah << 4)  | (bh)
         elif br < cr:
             h, m, l = ar, cr, br
-            x = (ar << 20) | (cr << 16) | (br << 12) | \
-                (ah << 8)  | (ch << 4)  | (bh)
         else:
             h, m, l = ar, br, cr
-            x = (ar << 20) | (br << 16) | (cr << 12) | \
-                (ah << 8)  | (bh << 4)  | (ch)
     if 0:
         pass
     elif h == m:
         if m == l:
-            x |= (TRIP << 28)
+            x = (TRIP << 28) | (h << 24)
         else:
-            x |= (PAIR << 28) | (h << 24)
+            x = (PAIR << 28) | (h << 24) | (h << 8) | (m << 4) | l
     elif m == l:
-        x |= (PAIR << 28) | (m << 24)
+        x = (PAIR << 28) | (m << 24) | (h << 8) | (m << 4) | l
     elif (h == (m + 1)) and (h == (l + 2)):
         if (ah == bh) and (ah == ch):
-            x |= (STRF << 28)
+            x = (STRF << 28) | (h << 24)
         else:
-            x |= (STR << 28)
+            x = (STR << 28) | (h << 24)
     elif (ah == bh) and (ah == ch):
-        x |= (FLUSH << 28)
+        x = (FLUSH << 28) | (h << 8) | (m << 4) | l
     else:
-        x |= (HIGH << 28)
+        x = (HIGH << 28) | (h << 8) | (m << 4) | l
     return x
 
 
@@ -158,11 +176,9 @@ def make_player(player_id, playername):
             fp.close()
     if None == m:
         return None
-
     p = Player()
     p.player_id = player_id
     p.playername = playername
-
     p.play = None
     if hasattr(m, 'play'):
         p.play = getattr(m, 'play')
@@ -463,6 +479,39 @@ def main(argv):
         print('random: %f seconds, %s: %f seconds; %s is %.2fx slower' \
                 % (p1.elapsed, p2.elapsed, p2 / p1))
         sys.exit()
+
+    elif 'deck' == c:
+        d = new_deck()
+        for i in d:
+            print '%d\t%s' % (i, card_str(i))
+
+    elif 'hands' == c:
+        for a in new_deck():
+            for b in new_deck():
+                if b <= a:
+                    continue
+                for c in new_deck():
+                    if c <= b:
+                        continue
+                    x = classify_hand(a, b, c)
+                    print 'HAND\t%s %s %s\t%d\t%s' % (hand_str((a, b, c)), \
+                            x >> 28, classification_str(x)) 
+ 
+    elif 'hands4' == c:
+        for a in new_deck():
+            for b in new_deck():
+                if b <= a:
+                    continue
+                for c in new_deck():
+                    if c <= b:
+                        continue
+                    for d in new_deck():
+                        if d <= c:
+                            continue
+                        h = (a, b, c, d)
+                        x = find_best_hand(h)
+                        print 'HAND\t%s\t%d\t%s' % (hand_str(h), \
+                                x >> 28, classification_str(x)) 
 
 
 if __name__ == '__main__':
