@@ -6,7 +6,7 @@ import random, sys, itertools, logging, imp, time, itertools
 
 
 CHIPS_START = 100               # each player starts with 100 chips
-ANTE        = (1, 100)          # ante is 1% total chip count each
+ANTE        = 0.01              # ante is 1% total chip count each
 
 RANKS       = 8                 # duece through nine
 SUITS       = 4                 # clubs, diamonds, hearts, spades
@@ -107,6 +107,15 @@ def classify_hand(a, b, c):
     return x
 
 
+def find_best_hand(h):
+    best = None
+    for i in itertools.combinations(h, 3):
+        x = classify_hand(i[0], i[1], i[2])
+        if None == best or x > best:
+            best = x
+    return best
+
+
 class Player():
     pass
 
@@ -171,7 +180,7 @@ def serialize_history(history):
     return t
 
 
-def play_hand(players, dealer):
+def play_hand(players):
     """
     play a single hand of monkeystud
     """
@@ -182,6 +191,7 @@ def play_hand(players, dealer):
     random.shuffle(players)
     d = new_deck()
     random.shuffle(d)
+    player_count = len(players)
     for seat, i in enumerate(players):
         i.hand = []
         i.paid = 0
@@ -191,7 +201,6 @@ def play_hand(players, dealer):
     # state machine
     #
     pot = 0
-    raised_to = 0
     for state in (0, 1, 2, 3, 4):
 
         # ante
@@ -208,7 +217,7 @@ def play_hand(players, dealer):
                 sum_chips += i.chips
                 if i.chips < min_chips:
                     min_chips = i.chips
-            ante = min(min_chips, (sum_chips * ANTE[0]) // ANTE[1])
+            ante = min(min_chips, int(sum_chips * ANTE) // len(players))
             raised_to = ante
             for i in players:
                 pot += ante
@@ -233,15 +242,24 @@ def play_hand(players, dealer):
         #
         if state in (2, 3, 4):
 
+            # bail out early
+            #
+            if 1 == player_count:
+                break
+
             # keep asking players for their bet until 
             # there's no new action
             #
+            raised_to = 0
+            for i in players:
+                i.paid = 0
+                i.played = False
             action = None
+            last_action = None
             while 1:
 
                 # advance the action
                 #
-                last_action = None
                 while 1:
                     if None == action:
                         action = 0
@@ -249,11 +267,16 @@ def play_hand(players, dealer):
                         action += 1
                         if action == len(players):
                             action = 0
-                    if not players[i].folded:
+                    if not players[action].folded:
                         break
                 if action == last_action:
                     break
-
+    
+                # no new action?
+                #
+                if players[action].played and players[action].paid == raised_to:
+                    break
+                
                 # figure out the max bet
                 #
                 max_bet = pot
@@ -267,7 +290,8 @@ def play_hand(players, dealer):
 
                 # get their play
                 # 
-                x = i.get_play(serialize_history(history))
+                x = players[action].get_play(serialize_history(history))
+                players[action].played = True
 
                 # fold?
                 #
@@ -275,30 +299,41 @@ def play_hand(players, dealer):
 
                     # folding when there is no bet? make it a call
                     #
-                    if i.paid == raised_to:
+                    if players[action].paid == raised_to:
                         x = 'C'
                     else:
-                        i.folded = True
-                        history.append((i.player_id, 'F', None))
+                        players[action].folded = True
+                        history.append((players[action].player_id, 'F', None))
+                        player_count -= 1
+                        if 1 == player_count:
+                            break
                 
                 # call?
                 #
                 if 'C' == x:
-                    if i.paid < raised_to:
-                        to_call = raised_to - i.paid
-                        pot += to_call
-                        i.paid += to_call
-                        i.chips -= to_call
-                        history.append((i.player_id, 'C', to_call))
+                    to_call = raised_to - players[action].paid
+                    pot += to_call
+                    players[action].paid += to_call
+                    players[action].chips -= to_call
+                    history.append((players[action].player_id, 'C', to_call))
 
                 # bet?
                 #
                 if 'B' == x:
-                    raised_to += max_bet
-                    pot += max_bet
-                    i.paid += max_bet
-                    i.chops -= to_call
-                    history.append((i.player_id, 'B', max_bet))
+                    to_call = raised_to - players[action].paid
+                    if 0 != to_call:
+                        pot += to_call
+                        players[action].paid += to_call
+                        players[action].chips -= to_call
+                        history.append((players[action].player_id, 'C', \
+                                to_call))
+                    the_raise = max_bet - to_call
+                    raised_to += the_raise
+                    pot += the_raise
+                    players[action].paid += the_raise
+                    players[action].chips -= the_raise
+                    history.append((players[action].player_id, 'B', the_raise))
+                    last_action = action
 
     # end of hand, figure out who won
     #
@@ -380,17 +415,26 @@ def play_tournament(games, players):
     return wins
 
 
-if __name__ == '__main__':
+def main(argv):
 
-    c = sys.argv[1]
+    c = argv[1]
     
     if 0:
         pass
-    
+ 
+    elif 'human' == c:
+        if 2 == len(argv):
+            computer = make_player('c', 'p_computer')
+        else:
+            computer = make_player('c', argv[3])
+        human = make_player('h', 'p_human')
+        winner = play_game([human, computer])
+        sys.exit()
+
     elif 'game' == c:
         logging.basicConfig(level=logging.INFO, 
                             format='%(message)s', stream=sys.stdout)
-        playernames = sys.argv[2:]
+        playernames = argv[2:]
         players = []
         for player_id, playername in enumerate(playernames):
             players.append(make_player(chr(ord('a') + player_id), playername))
@@ -402,8 +446,8 @@ if __name__ == '__main__':
         g_catch_exceptions = True
         logging.basicConfig(level=logging.INFO, 
                             format='%(message)s', stream=sys.stdout)
-        games = int(sys.argv[2])
-        playernames = sys.argv[3:]
+        games = int(argv[2])
+        playernames = argv[3:]
         players = []
         for player_id, playername in enumerate(playernames):
             players.append(make_player(player_id, playername))
@@ -411,7 +455,7 @@ if __name__ == '__main__':
         sys.exit()
 
     elif 'time' == c:
-        playername = sys.argv[3]
+        playername = argv[3]
         p1 = make_player(1, playername)
         p2 = make_player(1, 'p_random')
         print('playing 100 games against random ...')
@@ -420,3 +464,6 @@ if __name__ == '__main__':
                 % (p1.elapsed, p2.elapsed, p2 / p1))
         sys.exit()
 
+
+if __name__ == '__main__':
+    main(sys.argv)
