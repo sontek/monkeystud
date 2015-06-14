@@ -213,6 +213,7 @@ def play_hand(players):
         i.paid = 0
         i.folded = False
         history.append((i.player_id, 'S', seat))
+        logging.debug('%s sits down at seat %d' % (i.player_id, seat))
 
     # state machine
     #
@@ -240,6 +241,7 @@ def play_hand(players):
                 i.chips -= ante
                 i.paid += ante
                 history.append((i.player_id, 'A', ante))
+                logging.debug('%s antes %d' % (i.player_id, ante))
 
         # cards
         #
@@ -251,8 +253,12 @@ def play_hand(players):
                 i.hand.append(card)
                 if 1 == state:
                     history.append((i.player_id, 'D', 'xx'))
+                    logging.debug('%s is dealt %s down' % \
+                            (i.player_id, card_str(card)))
                 else:
                     history.append((i.player_id, 'U', card_str(card)))
+                    logging.debug('%s is dealt %s up' % \
+                            (i.player_id, card_str(card)))
     
         # betting rounds
         #
@@ -320,6 +326,7 @@ def play_hand(players):
                     else:
                         players[action].folded = True
                         history.append((players[action].player_id, 'F', None))
+                        logging.debug('%s folds' % players[action].player_id)
                         player_count -= 1
                         if 1 == player_count:
                             break
@@ -332,6 +339,8 @@ def play_hand(players):
                     players[action].paid += to_call
                     players[action].chips -= to_call
                     history.append((players[action].player_id, 'C', to_call))
+                    logging.debug('%s calls %d' % \
+                            (players[action].player_id, to_call))
 
                 # bet?
                 #
@@ -343,12 +352,16 @@ def play_hand(players):
                         players[action].chips -= to_call
                         history.append((players[action].player_id, 'C', \
                                 to_call))
+                        logging.debug('%s calls %d' % \
+                                (players[action].player_id, to_call))
                     the_raise = max_bet - to_call
                     raised_to += the_raise
                     pot += the_raise
                     players[action].paid += the_raise
                     players[action].chips -= the_raise
                     history.append((players[action].player_id, 'B', the_raise))
+                    logging.debug('%s raises %d' % \
+                            (players[action].player_id, the_raise))
                     last_action = action
 
     # end of hand, figure out who won
@@ -363,6 +376,7 @@ def play_hand(players):
     if 1 != len(remaining_players):
         for i in remaining_players:
             history.append((i.player_id, 'R', hand_str(i.hand)))
+            logging.debug('%s reveals %s' % (i.player_id, hand_str(i.hand)))
     
     # find the winner(s)
     #
@@ -382,13 +396,16 @@ def play_hand(players):
     for i in winners:
         i.chips += chips_per_winner
         history.append((i.player_id, 'W', chips_per_winner))
+        logging.debug('%s wins %d' % (i.player_id, chips_per_winner))
 
     # give remainder to random winner
     #
     if 0 != remainder:
         lucky_player = random.choice(winners)
         lucky_player.chips += remainder
-        history.append((i.player_id, 'Z', remainder))
+        history.append((lucky_player.player_id, 'Z', remainder))
+        logging.debug('%s wins remainder %s' % \
+                (lucky_player.player_id, remainder))
 
     # show everyone what happened
     #
@@ -410,9 +427,12 @@ def play_game(players):
         entrants.append(i)
     while 1:
         active_players = []
+        t = ''
         for i in entrants:
             if i.chips > 0:
                 active_players.append(i)
+            t += '%s:%d ' % (i.player_id, i.chips)
+        logging.info('CHIPS\t%s' % t)
         if 1 == len(active_players):
             return active_players[0]
         play_hand(active_players)
@@ -448,7 +468,7 @@ def main(argv):
         sys.exit()
 
     elif 'game' == c:
-        logging.basicConfig(level=logging.INFO, 
+        logging.basicConfig(level=logging.DEBUG, 
                             format='%(message)s', stream=sys.stdout)
         playernames = argv[2:]
         players = []

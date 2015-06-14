@@ -1,5 +1,5 @@
 # p_caller.py -- always call
 
-def bet(player_id, hand, state):
+def play(player_id, hand, history):
 	return 'C'
 
