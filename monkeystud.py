@@ -458,6 +458,7 @@ def play_tournament(games, players):
         winner = play_game(players)
         winner.wins += 1
         t = ''
+        players.sort(key = lambda x : x.wins,reverse = True)
         for j in players:
             t += '%s:%s:%d ' % (j.player_id, j.playername, j.wins)
         logging.info('WINS\t%s' % t)
@@ -504,11 +505,11 @@ def main(argv):
         sys.exit()
 
     elif 'time' == c:
-        playername = argv[3]
+        playername = argv[2]
         p1 = make_player(1, playername)
         p2 = make_player(2, 'p_random')
         print('playing 100 games against random ...')
-        play_tournament(100, players)
+        play_tournament(100, [p1, p2])
         print('player: %f seconds, %d calls, %f per call' % \
                 (p1.elapsed, p1.calls, p1.elapsed / p1.calls))
         print('random: %f seconds, %d calls, %f per call' % \
