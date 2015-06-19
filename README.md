@@ -11,14 +11,14 @@ Players are dealt four cards, the first face down, the rest face up.
 There are betting rounds after the second, third, and fourth cards.
 
 Up to eight players can play at once. Seats are shuffled every hand. 
-Each player starts with 100 chips. Ante is 1% of total chips, divided 
+Each player starts with 1000 chips. Ante is 1% of total chips, divided 
 evenly between all players, no more than any one player's stack.
 
 A play is either fold, call, or raise. The raise amount is the size of
 the pot, but no more than any one player's stack.
 
 A bot must implement the `play()` function. play() should return either
-'F', 'C', or 'R' for Fold, Call, or Raise. Play takes three
+`'F'`, `'C'`, or `'R'` for Fold, Call, or Raise. Play takes three
 arguments: `player_id`, `hand`, and `history`. `history` is a serialization
 of the action so far.
 
@@ -50,7 +50,7 @@ in total. Note that `player_id` is consistent across games.
 
 To time your robot (to make sure it's not too slow, compared to `p_random`):
 
-    $ python dealer.py time p_mybot
+    $ python monkeystud.py time p_mybot
 
 Have fun!
 
