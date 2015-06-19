@@ -2,11 +2,11 @@
 
 # see README.md for more dox
 
-import random, sys, itertools, logging, imp, time, itertools
+import os, random, sys, itertools, logging, imp, time, itertools
 
 
-CHIPS_START = 64                # each player starts with 64 chips
-ANTE        = 6                 # ante is 1 / 64th total chip count each
+CHIPS_START = 1024              # each player starts with 1024 chips
+ANTE        = 10                # ante is 1 / 1024th total chip count each
 
 RANKS       = 8                 # duece through nine
 SUITS       = 4                 # clubs, diamonds, hearts, spades
@@ -243,7 +243,6 @@ def play_hand(players):
                 if None == min_chips or i.chips < min_chips:
                     min_chips = i.chips
             ante = min(min_chips, (sum_chips >> ANTE) // player_count)
-            raised_to = ante
             for i in players:
                 if 0 == i.chips:
                     continue
@@ -466,7 +465,7 @@ def play_tournament(games, players):
 
 def main(argv):
 
-#    random.seed(''.join(argv))
+    random.seed(os.environ.get('SEED', time.time()))
     c = argv[1]
     
     if 0:
@@ -530,7 +529,7 @@ def main(argv):
                     if c <= b:
                         continue
                     x = classify_hand(a, b, c)
-                    print 'HAND\t%s %s %s\t%d\t%s' % (hand_str((a, b, c)), \
+                    print 'HAND\t%s\t%d\t%s' % (hand_str((a, b, c)), \
                             x >> 28, classification_str(x)) 
  
     elif 'hands4' == c:
@@ -548,6 +547,23 @@ def main(argv):
                         x = find_best_hand(h)
                         print 'HAND\t%s\t%d\t%s' % (hand_str(h), \
                                 x >> 28, classification_str(x)) 
+
+
+    elif 'best' == c:
+        for i in range(int(sys.argv[2])):
+            d = new_deck()
+            random.shuffle(d)
+            best = [0, 0]
+            for j in range(int(sys.argv[3])):
+                h = d[:4]
+                d = d[4:]
+                x = find_best_hand(h)
+                if x == best[0]:
+                    best[1] += 1
+                elif x > best[0]:
+                    best = [x, 0]
+            print 'HAND\t%d\t%d\t%s' % (best[1], best[0] >> 28, \
+                                classification_str(best[0])) 
 
 
 if __name__ == '__main__':
