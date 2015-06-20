@@ -98,8 +98,7 @@ def shuffle(d):
 
 
 def classify_hand(a, b, c):
-    "classify three card hand into a uint32 that obeys cardinality"
-    x = 0
+    "classify three card hand into uint32 that supports equality and greater than"
     ar = a >> 3
     br = b >> 3
     cr = c >> 3
@@ -120,9 +119,7 @@ def classify_hand(a, b, c):
             h, m, l = ar, cr, br
         else:
             h, m, l = ar, br, cr
-    if 0:
-        pass
-    elif h == m:
+    if h == m:
         if m == l:
             x = (TRIP << 28) | (h << 24)
         else:

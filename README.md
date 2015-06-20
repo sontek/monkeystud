@@ -63,7 +63,7 @@ then play your bot against computer:
 
 To play a tournament of 100 games:
 
-    $ python monkeystud.py tourney 100 p_bot p_random p_computer
+    $ python monkeystud.py tournament 100 p_bot p_random p_computer
 
 The winner of the tournament is the player who wins the most games,
 in total. Note that `player_id` is consistent across games.
