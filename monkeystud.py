@@ -540,10 +540,10 @@ def main(argv):
         p2 = make_player(2, 'p_random')
         print('playing 100 games against random ...')
         play_tournament(100, [p1, p2])
-        print('player: %f seconds, %d calls, %f per call' % \
-                (p1.elapsed, p1.calls, p1.elapsed / p1.calls))
-        print('random: %f seconds, %d calls, %f per call' % \
-                (p2.elapsed, p2.calls, p2.elapsed / p2.calls))
+        print('%s: %f seconds, %d calls' % (playername, p1.elapsed, p1.calls))
+        print('random: %f seconds, %d calls' % (p2.elapsed, p2.calls))
+        print('%s is %.1fx slower than random' % (playername, \
+              (p1.elapsed / p1.calls) / (p2.elapsed / p2.calls)))
         sys.exit()
 
     elif 'deck' == c:
@@ -595,6 +595,9 @@ def main(argv):
                     best = [x, 0]
             print 'HAND\t%d\t%d\t%s' % (best[1], best[0] >> 28, \
                                 classification_str(best[0])) 
+
+    else:
+        print 'i don\'t know how to "%s". please see README.md for dox' % c
 
 
 if __name__ == '__main__':
