@@ -30,7 +30,7 @@ def play(player_id, hand, history):
         elif 'R' == code:
             hand = monkeystud.str_to_hand(x)
             print '\t%-10s reveals %s -- %s' % (player, x, \
-                  monkeystud.classification_str(monkeystud.find_best_hand(hand)))
+                  monkeystud.hand_value_str(monkeystud.best_hand_value(hand)))
         elif 'W' == code:
             print '\t%-10s wins %d' % (player, int(x))
             hand_over = True

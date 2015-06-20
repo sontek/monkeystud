@@ -53,7 +53,7 @@ def parse_history(history):
         elif 'R' == code:
             hand = monkeystud.str_to_hand(x)
             g.players[player_id].cards = hand
-            g.players[player_id].best_hand = monkeystud.find_best_hand(hand)
+            g.players[player_id].best_hand = monkeystud.best_hand_value(hand)
         elif 'W' == code:
             g.players[player_id].chips += int(x)
         elif 'Z' == code:

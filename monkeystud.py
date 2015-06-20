@@ -62,7 +62,11 @@ def hand_str(h):
     return ','.join(map(lambda x : card_str(x), h))
 
 
-def classification_str(x):
+def hand_value_class(x):
+    return x >> 28
+
+
+def hand_value_str(x):
     c = x >> 28
     if HIGH == c:
         return 'high card (%s, %s, %s)' % \
@@ -97,14 +101,14 @@ def shuffle(d):
     return d
 
 
-def classify_hand(a, b, c):
+def hand_value(h):
     "classify three card hand into uint32 that supports equality and greater than"
-    ar = a >> 3
-    br = b >> 3
-    cr = c >> 3
-    ah = a & 7
-    bh = b & 7
-    ch = c & 7
+    ar = h[0] >> 3
+    br = h[1] >> 3
+    cr = h[2] >> 3
+    ah = h[0] & 7
+    bh = h[1] & 7
+    ch = h[2] & 7
     if ar < br:
         if br < cr:
             h, m, l = cr, br, ar
@@ -138,10 +142,10 @@ def classify_hand(a, b, c):
     return x
 
 
-def find_best_hand(h):
+def best_hand_value(h):
     best = None
     for i in itertools.combinations(h, 3):
-        x = classify_hand(i[0], i[1], i[2])
+        x = hand_value(i)
         if None == best or x > best:
             best = x
     return best
@@ -405,10 +409,10 @@ def play_hand(players):
         for i in remaining_players:
             history.append((i.player_id, 'R', hand_str(i.hand)))
             logging.debug('ACTION\t%s reveals %s -- %s' % (i.player_id, hand_str(i.hand), \
-                          classification_str(find_best_hand(i.hand))))
+                          hand_value_str(best_hand_value(i.hand))))
         best_so_far = [0, []]
         for i in remaining_players:
-            best_hand = find_best_hand(i.hand)
+            best_hand = best_hand_value(i.hand)
             if best_hand > best_so_far[0]:
                 best_so_far = [best_hand, [i, ]]
             elif best_hand == best_so_far[0]:
@@ -520,7 +524,7 @@ def main(argv):
 
     elif 'tournament' == c:
         global g_catch_exceptions
-        g_catch_exceptions = True
+        # g_catch_exceptions = True
         logging.basicConfig(level=logging.DEBUG, 
                             format='%(message)s', stream=sys.stdout)
         games = int(argv[2])
@@ -556,9 +560,9 @@ def main(argv):
                 for c in new_deck():
                     if c <= b:
                         continue
-                    x = classify_hand(a, b, c)
+                    x = hand_value((a, b, c))
                     print 'HAND\t%s\t%d\t%s' % (hand_str((a, b, c)), \
-                            x >> 28, classification_str(x)) 
+                            x >> 28, hand_value_str(x)) 
  
     elif 'hands4' == c:
         for a in new_deck():
@@ -572,9 +576,9 @@ def main(argv):
                         if d <= c:
                             continue
                         h = (a, b, c, d)
-                        x = find_best_hand(h)
+                        x = best_hand_value(h)
                         print 'HAND\t%s\t%d\t%s' % (hand_str(h), \
-                                x >> 28, classification_str(x)) 
+                                x >> 28, hand_value_str(x)) 
 
 
     elif 'best' == c:
@@ -585,13 +589,13 @@ def main(argv):
             for j in range(int(sys.argv[3])):
                 h = d[:4]
                 d = d[4:]
-                x = find_best_hand(h)
+                x = best_hand_value(h)
                 if x == best[0]:
                     best[1] += 1
                 elif x > best[0]:
                     best = [x, 0]
             print 'HAND\t%d\t%d\t%s' % (best[1], best[0] >> 28, \
-                                classification_str(best[0])) 
+                                hand_value_str(best[0])) 
 
     else:
         print 'i don\'t know how to "%s". please see README.md for dox' % c
