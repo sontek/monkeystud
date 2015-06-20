@@ -4,7 +4,6 @@ from monkeystud import rank_suit, hand_value, best_hand_value, hand_value_class,
 
 def play(player_id, hand, history):
 
-
     # just two cards? bet on nines, call any pair or possible straight or flush, 
     # fold otherwise
     #
