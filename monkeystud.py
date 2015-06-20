@@ -336,7 +336,7 @@ def play_hand(players):
                         x = 'C'
                     else:
                         players[action].folded = True
-                        history.append((players[action].player_id, 'F', None))
+                        history.append((players[action].player_id, 'F', 0))
                         logging.debug('ACTION\t%s folds' % players[action].player_id)
                         player_count -= 1
                         if 1 == player_count:

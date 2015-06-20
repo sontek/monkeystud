@@ -25,8 +25,8 @@ Sit, Ante, face Down, face Up, Fold, Call, Bet, Reveal, and Win.
 
 A complete hand might look something like:
 
-    a:S:0 
-    b:S:1 
+    a:S:1024
+    b:S:1024
     a:A:16 
     b:A:16 
     a:D:xx 
@@ -38,11 +38,12 @@ A complete hand might look something like:
     a:F:0 
     b:W:64
 
-Meaning, player A and player B sit down, each antes 16 and is dealt a 
-hole card face down, player A is dealt the duece of clubs, B is dealt the 
-seven of diamonds, player A checks, B bets 32, A folds, B wins 64 chips.
+Meaning, player A and player B sit with 1024 chips each, each antes 16 and 
+is dealt a hole card face down, player A is dealt the duece of clubs, B is 
+dealt the seven of diamonds, player A checks, B bets 32, A folds, B wins 
+64 chips.
 
-To get a copy of the game:
+To implement a bot, first get a copy of the game:
 
     $ git clone https://github.com/colinmsaunders/monkeystud.git
     $ cd monkeystud
