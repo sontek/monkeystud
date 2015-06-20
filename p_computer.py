@@ -3,6 +3,7 @@
 import random
 import monkeystud
 
+
 class Game:
     pass
 
@@ -54,9 +55,9 @@ def parse_history(history):
             g.players[player_id].cards = hand
             g.players[player_id].best_hand = monkeystud.find_best_hand(hand)
         elif 'W' == code:
-            g.players[player_id].chips -= int(x)
+            g.players[player_id].chips += int(x)
         elif 'Z' == code:
-            g.players[player_id].chips -= int(x)
+            g.players[player_id].chips += int(x)
 
     return g
 
