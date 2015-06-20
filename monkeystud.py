@@ -5,18 +5,19 @@
 import os, random, sys, itertools, logging, imp, time, itertools
 
 
-CHIPS_START = 1024              # each player starts with 1024 chips
-ANTE        = 10                # ante is 1 / 1024th total chip count each
+CHIPS_START    = 1024              # each player starts with 1024 chips
+ANTE           = 6                 # ante is 1 / 64th total chip count each
+MAX_SEATS      = 8                 # maximum seats at a table
 
-RANKS       = 8                 # duece through nine
-SUITS       = 4                 # clubs, diamonds, hearts, spades
-
-HIGH        = 0                 # high card
-PAIR        = 1                 # one pair
-STR         = 2                 # straight
-FLUSH       = 3                 # flush
-TRIP        = 4                 # three of a kind
-STRF        = 5                 # straight flush
+RANKS          = 8                 # duece through nine
+SUITS          = 4                 # clubs, diamonds, hearts, spades
+INVALID_CARD   = 17 << 3
+HIGH           = 0                 # high card
+PAIR           = 1                 # one pair
+STR            = 2                 # straight
+FLUSH          = 3                 # flush
+TRIP           = 4                 # three of a kind
+STRF           = 5                 # straight flush
 
 
 g_catch_exceptions = False
@@ -39,7 +40,22 @@ def suit_str(s):
 
 
 def card_str(a):
+    if INVALID_CARD == a:
+        return 'xx'
     return "%s%s" % (rank_str(a >> 3), suit_str(a & 7))
+
+
+def str_to_card(s):
+    if 'xx' == s:
+        return INVALID_CARD
+    return make_card(ord(s[0]) - ord('2'), {'c': 0, 'd': 1, 'h': 2, 's': 3}[s[1]])
+
+
+def str_to_hand(s):
+    h = []
+    for i in s.split(','):
+        h.append(str_to_card(i.strip()))
+    return h
 
 
 def hand_str(h):
@@ -218,13 +234,18 @@ def play_hand(players):
             i.hand = []
             i.paid = 0
             i.folded = False
-            history.append((i.player_id, 'S', seat))
-            logging.debug('%s sits down at seat %d' % (i.player_id, seat))
+            history.append((i.player_id, 'S', i.chips))
+            logging.debug('ACTION\t%s sits down at seat %d' % (i.player_id, seat))
 
     # state machine
     #
     pot = 0
     for state in (0, 1, 2, 3, 4):
+
+        # bail out early
+        #
+        if 1 == player_count:
+            break
 
         # ante
         #
@@ -250,7 +271,7 @@ def play_hand(players):
                 i.chips -= ante
                 i.paid += ante
                 history.append((i.player_id, 'A', ante))
-                logging.debug('%s antes %d' % (i.player_id, ante))
+                logging.debug('ACTION\t%s antes %d' % (i.player_id, ante))
 
         # cards
         #
@@ -262,21 +283,16 @@ def play_hand(players):
                 i.hand.append(card)
                 if 1 == state:
                     history.append((i.player_id, 'D', 'xx'))
-                    logging.debug('%s is dealt %s down' % \
+                    logging.debug('ACTION\t%s is dealt %s down' % \
                             (i.player_id, card_str(card)))
                 else:
                     history.append((i.player_id, 'U', card_str(card)))
-                    logging.debug('%s is dealt %s up' % \
+                    logging.debug('ACTION\t%s is dealt %s up' % \
                             (i.player_id, card_str(card)))
     
         # betting rounds
         #
         if state in (2, 3, 4):
-
-            # bail out early
-            #
-            if 1 == player_count:
-                break
 
             # keep asking players for their bet until 
             # there's no new action
@@ -324,7 +340,7 @@ def play_hand(players):
                     else:
                         players[action].folded = True
                         history.append((players[action].player_id, 'F', None))
-                        logging.debug('%s folds' % players[action].player_id)
+                        logging.debug('ACTION\t%s folds' % players[action].player_id)
                         player_count -= 1
                         if 1 == player_count:
                             break
@@ -337,12 +353,12 @@ def play_hand(players):
                     players[action].paid += to_call
                     players[action].chips -= to_call
                     history.append((players[action].player_id, 'C', to_call))
-                    logging.debug('%s calls %d' % \
+                    logging.debug('ACTION\t%s calls %d' % \
                             (players[action].player_id, to_call))
 
                 # bet?
                 #
-                if 'R' == x:
+                if 'B' == x:
                     to_call = raised_to - players[action].paid
                     if 0 != to_call:
                         pot += to_call
@@ -350,7 +366,7 @@ def play_hand(players):
                         players[action].chips -= to_call
                         history.append((players[action].player_id, 'C', \
                                 to_call))
-                        logging.debug('%s calls %d' % \
+                        logging.debug('ACTION\t%s calls %d' % \
                                 (players[action].player_id, to_call))
 
                     # figure out the maximum raise
@@ -368,9 +384,9 @@ def play_hand(players):
                         pot += the_raise
                         players[action].paid += the_raise
                         players[action].chips -= the_raise
-                        history.append((players[action].player_id, 'R', \
+                        history.append((players[action].player_id, 'B', \
                                 the_raise))
-                        logging.debug('%s raises %d' % \
+                        logging.debug('ACTION\t%s bets %d' % \
                                 (players[action].player_id, the_raise))
                         last_action = action
 
@@ -381,23 +397,26 @@ def play_hand(players):
         if not i.folded:
             remaining_players.append(i)
 
-    # reveal cards?
+    # only one player left?
     #
-    if 1 != len(remaining_players):
+    if 1 == len(remaining_players):
+        winners = remaining_players
+
+    # nope, let's reveal and find the best hand
+    #
+    else:
         for i in remaining_players:
-            history.append((i.player_id, 'H', hand_str(i.hand)))
-            logging.debug('%s reveals %s' % (i.player_id, hand_str(i.hand)))
-    
-    # find the winner(s)
-    #
-    best_so_far = [0, []]
-    for i in remaining_players:
-        best_hand = find_best_hand(i.hand)
-        if best_hand > best_so_far[0]:
-            best_so_far = [best_hand, [i, ]]
-        elif best_hand == best_so_far[0]:
-            best_so_far[1].append(i)
-    winners = best_so_far[1]
+            history.append((i.player_id, 'R', hand_str(i.hand)))
+            logging.debug('ACTION\t%s reveals %s -- %s' % (i.player_id, hand_str(i.hand), \
+                          classification_str(find_best_hand(i.hand))))
+        best_so_far = [0, []]
+        for i in remaining_players:
+            best_hand = find_best_hand(i.hand)
+            if best_hand > best_so_far[0]:
+                best_so_far = [best_hand, [i, ]]
+            elif best_hand == best_so_far[0]:
+                best_so_far[1].append(i)
+        winners = best_so_far[1]
 
     # divide the pot
     #
@@ -406,7 +425,10 @@ def play_hand(players):
     for i in winners:
         i.chips += chips_per_winner
         history.append((i.player_id, 'W', chips_per_winner))
-        logging.debug('%s wins %d' % (i.player_id, chips_per_winner))
+        if 1 == len(winners):
+            logging.debug('ACTION\t%s wins %d' % (i.player_id, chips_per_winner))
+        else:
+            logging.debug('ACTION\t%s wins %d in split' % (i.player_id, chips_per_winner))
 
     # give remainder to random winner
     #
@@ -414,12 +436,13 @@ def play_hand(players):
         lucky_player = random.choice(winners)
         lucky_player.chips += remainder
         history.append((lucky_player.player_id, 'Z', remainder))
-        logging.debug('%s wins remainder %s' % \
+        logging.debug('ACTION\t%s wins remainder %s' % \
                 (lucky_player.player_id, remainder))
 
     # show everyone what happened
     #
     serialized_history = serialize_history(history)
+    logging.debug('HISTORY\t%s' % serialized_history)
     for i in players:
         i.get_play(serialized_history)
 
@@ -453,14 +476,21 @@ def play_tournament(games, players):
     """
     for i in players:
         i.wins = 0
-    for i in range(games):
-        winner = play_game(players)
-        winner.wins += 1
-        t = ''
-        players.sort(key = lambda x : x.wins,reverse = True)
-        for j in players:
-            t += '%s:%s:%d ' % (j.player_id, j.playername, j.wins)
-        logging.info('WINS\t%s' % t)
+    if MAX_SEATS < len(players):
+        tables = list(itertools.combinations(players, MAX_SEATS))
+        games_per_table = games // len(tables)
+    else:
+        tables = [players, ]
+        games_per_table = games
+    for table in tables:
+        for i in range(games_per_table):
+            winner = play_game(table)
+            winner.wins += 1
+            t = ''
+            players.sort(key = lambda x : x.wins,reverse = True)
+            for j in players:
+                t += '%s:%s:%d ' % (j.player_id, j.playername, j.wins)
+            logging.info('WINS\t%s' % t)
 
 
 def main(argv):
@@ -472,12 +502,13 @@ def main(argv):
         pass
  
     elif 'human' == c:
+        players = [make_player('human', 'p_human'), ]
         if 2 == len(argv):
-            computer = make_player('c', 'p_computer')
+            players.append(make_player('computer', 'p_computer'))
         else:
-            computer = make_player('c', argv[3])
-        human = make_player('h', 'p_human')
-        winner = play_game([human, computer])
+            for i in argv[2:]:
+                players.append(make_player(i, i))
+        winner = play_game(players)
         sys.exit()
 
     elif 'game' == c:
@@ -493,13 +524,13 @@ def main(argv):
     elif 'tournament' == c:
         global g_catch_exceptions
         g_catch_exceptions = True
-        logging.basicConfig(level=logging.INFO, 
+        logging.basicConfig(level=logging.DEBUG, 
                             format='%(message)s', stream=sys.stdout)
         games = int(argv[2])
         playernames = argv[3:]
         players = []
         for player_id, playername in enumerate(playernames):
-            players.append(make_player(player_id, playername))
+            players.append(make_player(chr(ord('a') + player_id), playername))
         play_tournament(games, players)
         sys.exit()
 

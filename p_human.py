@@ -5,17 +5,43 @@ import monkeystud
 
 def play(player_id, hand, history):
     print 'History:'
-    pot = 0
+    hand_over = False
     for i in history.split():
-        j = i.split(':')
-        if j[1] in ('A', 'B', 'C'):
-            pot += int(j[2])
-        print '\t%s\t%s\t%s' % (j[0], j[1], j[2])
+        player, code, x = i.split(':')
+        if 0:
+            pass
+        elif 'S' == code:
+            print '\t%-10s sits down with %d chips' % (player, int(x))
+        elif 'A' == code:
+            print '\t%-10s antes %d chips' % (player, int(x))
+        elif 'D' == code:
+            print '\t%-10s is dealt hole card face down' % (player, )
+        elif 'U' == code:
+            print '\t%-10s is dealt %s face up' % (player, x)
+        elif 'C' == code:
+            if 0 == int(x):
+                print '\t%-10s checks' % (player, )
+            else:
+                print '\t%-10s calls %d' % (player, int(x))
+        elif 'F' == code:
+            print '\t%-10s folds' % (player, )
+        elif 'B' == code:
+            print '\t%-10s bets %d' % (player, int(x))
+        elif 'R' == code:
+            hand = monkeystud.str_to_hand(x)
+            print '\t%-10s reveals %s -- %s' % (player, x, \
+                  monkeystud.classification_str(monkeystud.find_best_hand(hand)))
+        elif 'W' == code:
+            print '\t%-10s wins %d' % (player, int(x))
+            hand_over = True
+        elif 'Z' == code:
+            print '\t%-10s wins lucky %d' % (player, int(x))
 
-    s = 'You are player "%s". Your hand is: %s\n'
-    s += 'The pot is %d. What is your bet? '
-    s += '(Fold, Call, or Raise)' 
-    print s % (player_id, monkeystud.hand_str(hand), pot)
+    if hand_over:
+        print 'Press return to continue.'
+    else:
+        print 'You are player "%s". Your hand is: %s. ' % (player_id, monkeystud.hand_str(hand))
+        print '[F]old, (C)all, or (B)et?'
     s = None
     try:
         s = raw_input()
@@ -26,8 +52,7 @@ def play(player_id, hand, history):
         return 'F'
     if s.startswith('C'):
         return 'C'
-    if s.startswith('R'):
-        return 'R'
-    print 'Invalid input. Folding.'
+    if s.startswith('B'):
+        return 'B'
     return 'F'
 
