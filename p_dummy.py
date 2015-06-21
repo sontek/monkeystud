@@ -4,19 +4,12 @@ from monkeystud import rank_suit, hand_value, best_hand_value, hand_value_class,
 
 def play(player_id, hand, history):
 
-    # just two cards? bet on nines, call any pair or possible straight or flush, 
-    # fold otherwise
+    # just two cards? call any pair, fold otherwise
     #
     if 2 == len(hand):
         rank0, suit0 = rank_suit(hand[0])
         rank1, suit1 = rank_suit(hand[1])
-        if 9 == rank0 and 9 == rank1:
-            return 'B'
         if rank0 == rank1:
-            return 'C'
-        if suit0 == suit1:
-            return 'C'
-        if (rank1 - rank0) in (-1, 1):
             return 'C'
         return 'F'
 
