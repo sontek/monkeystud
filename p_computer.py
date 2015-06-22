@@ -23,7 +23,7 @@ def parse_history(history):
             p = Player()
             p.seat = len(g.players)
             p.player_id = player_id
-            p.chips = int(x)
+            p.chips = 0
             p.bet = 0
             p.hand = []
             p.history = []
@@ -33,6 +33,7 @@ def parse_history(history):
         if 0:
             pass
         elif 'S' == code:
+            p.chips = int(x)
             g.player_count += 1
             pass
         elif 'A' == code:
