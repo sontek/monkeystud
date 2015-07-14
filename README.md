@@ -54,24 +54,25 @@ To play against the computer:
 
 To play a game between computer and random:
 
-    $ python monkeystud.py game p_computer p_random
+    $ python monkeystud.py game p_computer/player.py p_random/player.py
 
-Next, copy `p_computer.py` to `p_mybot.py`, implement `play()` and
-then play your bot against computer:
+Next, make a directory called `mybot` and copy over `p_computer/player.py`,
+edit the `play()` function, and play your bot against the computer:
 
-    $ cp p_computer.py p_mybot.py
-    $ python monkeystud.py game p_mybot p_computer
+    $ mkdir mybot
+    $ cp p_computer/player.py mybot/
+    $ python monkeystud.py game mybot/player.py p_computer/player.py
 
 To play a tournament of 100 games:
 
-    $ python monkeystud.py tournament 100 p_bot p_random p_computer
+    $ python monkeystud.py tournament 100 mybot/player.py p_random/player.py p_computer/player.py
 
 The winner of the tournament is the player who wins the most games,
 in total. Note that `player_id` is consistent across games.
 
 To time your robot (to make sure it's not too slow, compared to `p_random`):
 
-    $ python monkeystud.py time p_mybot
+    $ python monkeystud.py time mybot/player.py
 
 Have fun!
 

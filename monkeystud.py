@@ -174,31 +174,23 @@ def call_player(player, args, default):
     return result
 
 
-def make_player(player_id, playername):
-    fp = pathname = description = m = None
+def make_player(player_id, filename):
     try:
-        fp, pathname, description = imp.find_module(playername)
+        (path, name) = os.path.split(filename)
+        (name, ext) = os.path.splitext(name)
+        (f, filename, data) = imp.find_module(name, [path])
+        m = imp.load_module(name, f, filename, data)
     except:
-        logging.warn('caught exception "%s" finding module %s'
-                     % (sys.exc_info()[1], playername))
+        logging.error('caught exception "%s" loading %s' % \
+                      (sys.exc_info()[1], filename))
         raise
-    try:
-        if fp:
-            m = imp.load_module(playername, fp, pathname, description)
-    except:
-        logging.warn('caught exception "%s" importing %s'
-                     % (sys.exc_info()[1], playername))
-        raise
-    finally:
-        if fp:
-            fp.close()
-    if None == m:
-        return None
     p = Player()
     p.player_id = player_id
-    p.playername = playername
+    p.playername = filename
     p.play = None
-    if hasattr(m, 'play'):
+    if not hasattr(m, 'play'):
+        logging.error('%s has no function "play"; ignoring ...' % filename)
+    else:
         p.play = getattr(m, 'play')
     p.elapsed = 0.0
     p.calls = 0
@@ -503,9 +495,9 @@ def main(argv):
         pass
  
     elif 'human' == c:
-        players = [make_player('human', 'p_human'), ]
+        players = [make_player('human', 'p_human/player.py'), ]
         if 2 == len(argv):
-            players.append(make_player('computer', 'p_computer'))
+            players.append(make_player('computer', 'p_computer/player.py'))
         else:
             for i in argv[2:]:
                 players.append(make_player(i, i))
@@ -538,7 +530,7 @@ def main(argv):
     elif 'time' == c:
         playername = argv[2]
         p1 = make_player(1, playername)
-        p2 = make_player(2, 'p_random')
+        p2 = make_player(2, 'p_random/player.py')
         print('playing 100 games against random ...')
         play_tournament(100, [p1, p2])
         print('%s: %f seconds, %d calls' % (playername, p1.elapsed, p1.calls))
