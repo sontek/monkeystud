@@ -174,11 +174,10 @@ def call_player(player, args, default):
     return result
 
 
-def make_player(player_id, filename):
+def make_player(player_id, dirname):
     try:
-        (path, name) = os.path.split(filename)
-        (name, ext) = os.path.splitext(name)
-        (f, filename, data) = imp.find_module(name, [path])
+        name = 'bot'
+        (f, filename, data) = imp.find_module(name, [dirname, ])
         m = imp.load_module(name, f, filename, data)
     except:
         logging.error('caught exception "%s" loading %s' % \
@@ -186,7 +185,7 @@ def make_player(player_id, filename):
         raise
     p = Player()
     p.player_id = player_id
-    p.playername = filename
+    p.playername = dirname
     p.play = None
     if not hasattr(m, 'play'):
         logging.error('%s has no function "play"; ignoring ...' % filename)
@@ -495,9 +494,9 @@ def main(argv):
         pass
  
     elif 'human' == c:
-        players = [make_player('human', 'p_human/player.py'), ]
+        players = [make_player('human', 'p_human'), ]
         if 2 == len(argv):
-            players.append(make_player('computer', 'p_computer/player.py'))
+            players.append(make_player('computer', 'p_computer'))
         else:
             for i in argv[2:]:
                 players.append(make_player(i, i))
@@ -505,7 +504,7 @@ def main(argv):
         sys.exit()
 
     elif 'game' == c:
-        logging.basicConfig(level=logging.DEBUG, 
+        logging.basicConfig(level=logging.DEBUG,
                             format='%(message)s', stream=sys.stdout)
         playernames = argv[2:]
         players = []
@@ -517,7 +516,7 @@ def main(argv):
     elif 'tournament' == c:
         global g_catch_exceptions
         # g_catch_exceptions = True
-        logging.basicConfig(level=logging.DEBUG, 
+        logging.basicConfig(level=logging.DEBUG,
                             format='%(message)s', stream=sys.stdout)
         games = int(argv[2])
         playernames = argv[3:]
@@ -530,7 +529,7 @@ def main(argv):
     elif 'time' == c:
         playername = argv[2]
         p1 = make_player(1, playername)
-        p2 = make_player(2, 'p_random/player.py')
+        p2 = make_player(2, 'p_random')
         print('playing 100 games against random ...')
         play_tournament(100, [p1, p2])
         print('%s: %f seconds, %d calls' % (playername, p1.elapsed, p1.calls))
