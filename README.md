@@ -45,7 +45,7 @@ dealt the seven of diamonds, player A checks, B bets 32, A folds, B wins
 
 To implement a bot, first get a copy of the game:
 
-    $ git clone https://github.com/colinmsaunders/monkeystud.git
+    $ git clone https://github.com/botfights/monkeystud.git
     $ cd monkeystud
 
 To play against the computer:
