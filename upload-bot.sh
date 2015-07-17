@@ -1,38 +1,29 @@
 #!/bin/bash
 
-if [[ $# -lt 3 ]]; then
+if [[ $# -ne 1 ]]; then
     echo "usage:"
     echo
-    echo "    $ ./upload-bot.sh <directory> <game> <branch> [<id>]"
+    echo "    $ ./upload-bot.sh <dir>"
     echo
-    echo "where directory is the path of your bot, game and branch are"
-    echo "the game and branch of the github.com/botfights repo,"
-    echo "and <id> is the identifier of your bot. Leave <id> blank the"
-    echo "first time you register your bot, a new id will be generated."
+    echo "Upload a bot located at <dir> to botfights."
+    echo "On success, your bot_id will be returned. Use this id"
+    echo "to register your bot for a fight."
     echo
     echo "See http://botfights.io/ for more documentation."
     exit 1
 fi
 
 DIR=$1
-GAME=$2
-BRANCH=$3
 TMPFILE=$(mktemp -t "XXXXXXXXXX")
-pushd $DIR;tar czvf $TMPFILE ./;popd
-VERSION=`shasum $TMPFILE | cut -c1-40`
-ID=$VERSION
-if [[ $# -eq 4 ]]; then
-    ID=$4
-fi
-curl -X PUT --data-binary @$TMPFILE http://drop.botfights.io/bot/$GAME/$BRANCH/$ID/$VERSION
-
-echo "Success, your bot id is: $ID"
-echo
-echo "Write that down; you will need it to update your bot."
-echo
-echo "Wait a couple minutes then check:"
-echo
-echo "http://s3.botfights.io/bot/${GAME}/${BRANCH}/${ID}/metadata.json"
-echo
-echo "Fight!"
+echo "# tar'ing up ${DIR} ..."
+pushd ${DIR} > /dev/null
+tar czf ${TMPFILE} ./ > /dev/null
+popd > /dev/null
+ID=`shasum $TMPFILE | cut -c1-40`
+echo "# sha is: ${ID}"
+echo "# PUT'ing tarball to drop.botfights.io ..."
+curl -X PUT --data-binary @$TMPFILE http://drop.botfights.io/bot/$ID
+echo "# success! wait a couple minutes, then check the following for status:"
+echo "# http://s3.botfights.io/bot/${ID}/metadata.json"
+echo $ID
 
