@@ -1,4 +1,4 @@
-# p_computer.py -- sample bot
+# p_example.py -- example bot
 
 import random
 import monkeystud
@@ -63,8 +63,44 @@ def parse_history(history):
     return g
 
 
-
 def play(player_id, hand, history):
+ 
+    # parse the history into something more friendly ...
+    #
     g = parse_history(history)
-    return random.choice(('F', 'C', 'B'))
+
+    # TODO: do stuff with g here ...
+
+    # just two cards? call any pair, fold otherwise
+    #
+    if 2 == len(hand):
+        rank0, suit0 = rank_suit(hand[0])
+        rank1, suit1 = rank_suit(hand[1])
+        if rank0 == rank1:
+            return 'C'
+        return 'F'
+
+    # three cards? bet on a flush or better, call on a pair or straight,
+    # fold otherwise
+    #
+    if 3 == len(hand):
+        v = hand_value(hand)
+        c = hand_value_class(v) 
+        if c in (FLUSH, TRIP, STRF):
+            return 'B'
+        if c in (PAIR, STR):
+            return 'C'
+        return 'F'
+
+    # four cards? bet on trips or straight flush, call on a straight or flush, 
+    # fold otherwise
+    #
+    if 4 == len(hand):
+        v = best_hand_value(hand)
+        c = hand_value_class(v)
+        if c in (TRIP, STRF):
+            return 'B'
+        if c in (STR, FLUSH):
+            return 'C'
+        return 'F'
 
