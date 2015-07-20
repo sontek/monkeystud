@@ -74,8 +74,8 @@ def play(player_id, hand, history):
     # just two cards? call any pair, fold otherwise
     #
     if 2 == len(hand):
-        rank0, suit0 = rank_suit(hand[0])
-        rank1, suit1 = rank_suit(hand[1])
+        rank0, suit0 = monkeystud.rank_suit(hand[0])
+        rank1, suit1 = monkeystud.rank_suit(hand[1])
         if rank0 == rank1:
             return 'C'
         return 'F'
@@ -84,11 +84,11 @@ def play(player_id, hand, history):
     # fold otherwise
     #
     if 3 == len(hand):
-        v = hand_value(hand)
-        c = hand_value_class(v) 
-        if c in (FLUSH, TRIP, STRF):
+        v = monkeystud.hand_value(hand)
+        c = monkeystud.hand_value_class(v) 
+        if c in (monkeystud.FLUSH, monkeystud.TRIP, monkeystud.STRF):
             return 'B'
-        if c in (PAIR, STR):
+        if c in (monkeystud.PAIR, monkeystud.STR):
             return 'C'
         return 'F'
 
@@ -96,11 +96,11 @@ def play(player_id, hand, history):
     # fold otherwise
     #
     if 4 == len(hand):
-        v = best_hand_value(hand)
-        c = hand_value_class(v)
-        if c in (TRIP, STRF):
+        v = monkeystud.best_hand_value(hand)
+        c = monkeystud.hand_value_class(v)
+        if c in (monkeystud.TRIP, monkeystud.STRF):
             return 'B'
-        if c in (STR, FLUSH):
+        if c in (monkeystud.STR, monkeystud.FLUSH):
             return 'C'
         return 'F'
 
