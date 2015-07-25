@@ -186,6 +186,9 @@ def make_player(player_id, dirname):
     p = Player()
     p.player_id = player_id
     p.playername = dirname
+    z = p.playername.rfind('/')
+    if -1 != z:
+        p.playername = p.playername[z + 1:]
     p.play = None
     if not hasattr(m, 'play'):
         logging.error('%s has no function "play"; ignoring ...' % filename)
@@ -474,6 +477,8 @@ def play_tournament(games, players):
     else:
         tables = [players, ]
         games_per_table = games
+    n = games_per_table * len(tables)
+    game_num = 0
     for table in tables:
         for i in range(games_per_table):
             winner = play_game(table)
@@ -481,8 +486,9 @@ def play_tournament(games, players):
             t = ''
             players.sort(key = lambda x : x.wins,reverse = True)
             for j in players:
-                t += '%s:%s:%d ' % (j.player_id, j.playername, j.wins)
-            logging.info('WINS\t%s' % t)
+                t += '%s:%d\t' % (j.playername, j.wins)
+            game_num += 1
+            logging.info('BOTFIGHT\t%d\t%d\t%s' % (game_num, n, t))
 
 
 def main(argv):
