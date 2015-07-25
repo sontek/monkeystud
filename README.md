@@ -74,5 +74,9 @@ To time your robot (to make sure it's not too slow, compared to `p_random`):
 
     $ python monkeystud.py time mybot
 
+Once your ready, upload your bot to http://botfights.io to challenge other
+coders. See http://botfights.io/how-to-play for more information.
+
 Have fun!
 
+colinmsaunders@gmail.com

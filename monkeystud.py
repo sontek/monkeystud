@@ -175,14 +175,17 @@ def call_player(player, args, default):
 
 
 def make_player(player_id, dirname):
+    global g_catch_exceptions
+    m = None
     try:
         name = 'bot'
         (f, filename, data) = imp.find_module(name, [dirname, ])
         m = imp.load_module(name, f, filename, data)
     except:
         logging.error('caught exception "%s" loading %s' % \
-                      (sys.exc_info()[1], filename))
-        raise
+                      (sys.exc_info()[1], dirname))
+        if not g_catch_exceptions:
+            raise
     p = Player()
     p.player_id = player_id
     p.playername = dirname
@@ -190,7 +193,7 @@ def make_player(player_id, dirname):
     if -1 != z:
         p.playername = p.playername[z + 1:]
     p.play = None
-    if not hasattr(m, 'play'):
+    if None == m or not hasattr(m, 'play'):
         logging.error('%s has no function "play"; ignoring ...' % filename)
     else:
         p.play = getattr(m, 'play')
@@ -494,7 +497,9 @@ def play_tournament(games, players):
 def main(argv):
 
     random.seed(os.environ.get('SEED', time.time()))
-    c = argv[1]
+    c = None
+    if 1 < len(argv):
+        c = argv[1]
     
     if 0:
         pass
@@ -521,7 +526,7 @@ def main(argv):
 
     elif 'tournament' == c:
         global g_catch_exceptions
-        # g_catch_exceptions = True
+        g_catch_exceptions = True
         logging.basicConfig(level=logging.DEBUG,
                             format='%(message)s', stream=sys.stdout)
         games = int(argv[2])
