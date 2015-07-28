@@ -600,7 +600,8 @@ def main(argv):
                                 hand_value_str(best[0])) 
 
     elif 'verify' == c:
-        return random.choice((0, 1))
+        result = random.choice((0, 1))
+        sys.exit(result)
 
     else:
         print 'i don\'t know how to "%s". please see README.md for dox' % c
