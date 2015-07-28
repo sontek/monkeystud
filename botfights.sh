@@ -10,5 +10,5 @@ if [ $1 = 'verify' ];
 elif [ $1 = 'fight' ];
     then
     shift
-    python monkeystud.py tournament 1000 $@
+    python monkeystud.py tournament 100 $@
 fi
