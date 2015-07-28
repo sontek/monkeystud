@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # botfights.sh -- wrapper for botfights.io <=> monkeystud
-# either verify a bot, or 
+# either verify a bot, or
 # run a botfight
 
 if [ $1='verify' ];
@@ -10,5 +10,5 @@ if [ $1='verify' ];
 elif [ $1='fight' ];
     then
     shift
-    python monkeystud.py tournament 10000 $@
+    python monkeystud.py tournament 1000 $@
 fi
