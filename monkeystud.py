@@ -599,6 +599,9 @@ def main(argv):
             print 'HAND\t%d\t%d\t%s' % (best[1], best[0] >> 28, \
                                 hand_value_str(best[0])) 
 
+    elif 'verify' == c:
+        return random.choice((0, 1))
+
     else:
         print 'i don\'t know how to "%s". please see README.md for dox' % c
 
