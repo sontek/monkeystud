@@ -5,6 +5,9 @@
 import os, random, sys, itertools, logging, imp, time, itertools
 
 
+VERIFICATION_VERSION    = (2, 7)   # must be running python 2.7
+VERIFICATION_FACTOR     = 100.0    # bot can be no more than 100x slower
+
 CHIPS_START    = 1024              # each player starts with 1024 chips
 ANTE           = 6                 # ante is 1 / 64th total chip count each
 MAX_SEATS      = 8                 # maximum seats at a table
@@ -494,6 +497,31 @@ def play_tournament(games, players):
             logging.info('BOTFIGHT\t%d\t%d\t%s' % (game_num, n, t))
 
 
+def verify_player(playername):
+    global g_catch_exceptions
+    g_catch_exceptions = True
+    logging.info('verifying %s ...' % playername)
+    if VERIFICATION_VERSION != sys.version_info[:2]:
+        logging.info('verification FAILED. wrong python version.')
+        return 2
+    p1 = make_player(1, playername)
+    if None == p1.play:
+        logging.info('verification FAILED. import failed.')
+        return 3
+    p2 = make_player(2, 'p_random')
+    logging.info('playing 100 games against random ...')
+    play_tournament(100, [p1, p2])
+    logging.info('%s: %f seconds, %d calls' % (playername, p1.elapsed, p1.calls))
+    logging.info('random: %f seconds, %d calls' % (p2.elapsed, p2.calls))
+    factor = (p1.elapsed / p1.calls) / (p2.elapsed / p2.calls)
+    factor = logging.info('%s is %.1fx slower than random' % (playername, factor))
+    if VERIFICATION_FACTOR < factor:
+        logging.info('verification FAILED. player too slow.')
+        return 1
+    logging.info('verification success.')
+    return 0
+
+
 def main(argv):
 
     random.seed(os.environ.get('SEED', time.time()))
@@ -600,7 +628,9 @@ def main(argv):
                                 hand_value_str(best[0])) 
 
     elif 'verify' == c:
-        result = 0
+        logging.basicConfig(level=logging.DEBUG,
+                            format='%(message)s', stream=sys.stdout)
+        result = verify_player(argv[2])
         sys.exit(result)
 
     else:
