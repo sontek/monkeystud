@@ -600,7 +600,7 @@ def main(argv):
                                 hand_value_str(best[0])) 
 
     elif 'verify' == c:
-        result = random.choice((0, 1))
+        result = 0
         sys.exit(result)
 
     else:
