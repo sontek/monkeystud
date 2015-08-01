@@ -2,25 +2,24 @@
 
 # see README.md for more dox
 
-import os, random, sys, itertools, logging, imp, time, itertools
+import os, random, sys, itertools, logging, imp, time, itertools, getopt
 
+EXPECTED_PYTON_VERSION  = (2, 7)    # must be running python 2.7
+MAX_TIME                = 100.0     # bot can be no more than 100x slower
 
-VERIFICATION_VERSION    = (2, 7)   # must be running python 2.7
-VERIFICATION_FACTOR     = 100.0    # bot can be no more than 100x slower
+CHIPS_START    = 1024               # each player starts with 1024 chips
+ANTE           = 6                  # ante is 1 / 64th total chip count each
+MAX_SEATS      = 8                  # maximum seats at a table
 
-CHIPS_START    = 1024              # each player starts with 1024 chips
-ANTE           = 6                 # ante is 1 / 64th total chip count each
-MAX_SEATS      = 8                 # maximum seats at a table
-
-RANKS          = 8                 # duece through nine
-SUITS          = 4                 # clubs, diamonds, hearts, spades
+RANKS          = 8                  # duece through nine
+SUITS          = 4                  # clubs, diamonds, hearts, spades
 INVALID_CARD   = 17 << 3
-HIGH           = 0                 # high card
-PAIR           = 1                 # one pair
-STR            = 2                 # straight
-FLUSH          = 3                 # flush
-TRIP           = 4                 # three of a kind
-STRF           = 5                 # straight flush
+HIGH           = 0                  # high card
+PAIR           = 1                  # one pair
+STR            = 2                  # straight
+FLUSH          = 3                  # flush
+TRIP           = 4                  # three of a kind
+STRF           = 5                  # straight flush
 
 
 g_catch_exceptions = False
@@ -465,7 +464,7 @@ def play_game(players):
             t += '%s:%s:%d ' % (i.player_id, i.playername, i.chips)
             if i.chips == (len(players) * CHIPS_START):
                 winner = i
-        logging.info('CHIPS\t%s' % t)
+        logging.debug('CHIPS\t%s' % t)
         if None != winner:
             return winner
         play_hand(players)
@@ -497,11 +496,23 @@ def play_tournament(games, players):
             logging.info('BOTFIGHT\t%d\t%d\t%s' % (game_num, n, t))
 
 
+def time_player(playername):
+    p1 = make_player(1, playername)
+    p2 = make_player(2, 'p_random')
+    logging.info('playing 100 games against random ...')
+    play_tournament(100, [p1, p2])
+    logging.info('%s: %f seconds, %d calls' % (playername, p1.elapsed, p1.calls))
+    logging.info('random: %f seconds, %d calls' % (p2.elapsed, p2.calls))
+    factor = (p1.elapsed / p1.calls) / (p2.elapsed / p2.calls)
+    factor = logging.info('player is %.1fx slower than random' % factor)
+    return factor
+
+
 def verify_player(playername):
     global g_catch_exceptions
     g_catch_exceptions = True
     logging.info('verifying %s ...' % playername)
-    if VERIFICATION_VERSION != sys.version_info[:2]:
+    if EXPECTED_PYTHON_VERSION != sys.version_info[:2]:
         logging.info('verification FAILED. wrong python version.')
         return 2
     p1 = make_player(1, playername)
@@ -509,43 +520,112 @@ def verify_player(playername):
         logging.info('verification FAILED. import failed.')
         return 3
     p2 = make_player(2, 'p_random')
-    logging.info('playing 100 games against random ...')
-    play_tournament(100, [p1, p2])
-    logging.info('%s: %f seconds, %d calls' % (playername, p1.elapsed, p1.calls))
-    logging.info('random: %f seconds, %d calls' % (p2.elapsed, p2.calls))
-    factor = (p1.elapsed / p1.calls) / (p2.elapsed / p2.calls)
-    factor = logging.info('%s is %.1fx slower than random' % (playername, factor))
-    if VERIFICATION_FACTOR < factor:
-        logging.info('verification FAILED. player too slow.')
+    if max_speed < factor:
+        logging.info('verification FAILED. max_speed is %.1f.' % max_speed)
         return 1
     logging.info('verification success.')
     return 0
 
 
-def main(argv):
+def usage():
+    print('''\
+monkeystud! see: http://github.com/botfights/monkeystud for dox
 
-    random.seed(os.environ.get('SEED', time.time()))
-    c = None
-    if 1 < len(argv):
-        c = argv[1]
+usage:
+
+    $ python monkeystud.py [<options>] <command> <arg> <arg> ...
+
+commands:
+
+    human [<opponent1>] [<oppponent2>] ... 
+                        
+                        play against the computer
+
+    game [<player1>] [<player2>] ...
+
+                        play a single game between players
+
+    tournament [<player1>] [<player2>] ...
+
+                        play a tournament between players
+options:
+ 
+    -h, --help                      show this help
+    --seed=<s>                      set seed for random number generator
+    --catch-exceptions=<off|on>     catch and log exceptions
+    --num-games=<n>                 set number of games for tournament
+    --log-level=<n>                 set log level (10 debug, 20 info, 40 error)
+    --max-time=<f>                  max time relative to p_random a bot can take
+''')
+
+
+def main(argv):
+    try:
+        opts, args = getopt.getopt(argv, "h", [
+                                                    "help",
+                                                    "seed=",
+                                                    "catch-exceptions=",
+                                                    "num-games=",
+                                                    "log-level=",
+                                                    "max-time=",
+                                                    ])
+    except getopt.GetoptError as err:
+        print(str(err))
+        usage()
+        sys.exit(1)
+    seed = time.time()
+    num_games = 1000
+    max_time = MAX_TIME
+    log_level = logging.DEBUG
+    global g_catch_exceptions
+    g_catch_exceptions = False
+    for o, a in opts:
+        if 0:
+            pass
+        elif o in ("-h", "--help"):
+            usage()
+            sys.exit()
+        elif o in ("--seed", ):
+            seed = a
+        elif o in ("--num-games", ):
+            num_games = int(a)
+        elif o in ("--log-level", ):
+            log_level = int(a)
+        elif o in ("--max-time", ):
+            max_time = float(a)
+        elif o in ("--catch-exceptions", ):
+            g_catch_exceptions = 'off' != a
+        else:
+            raise Exception("unhandled option")
+    random.seed(seed)
+    if 0 == len(args):
+        usage()
+        sys.exit()
+    c = args[0]
     
     if 0:
         pass
  
     elif 'human' == c:
+        logging.basicConfig(level=logging.INFO, format='%(message)s', 
+                        stream=sys.stdout)
+ 
+
         players = [make_player('human', 'p_human'), ]
-        if 2 == len(argv):
+        if 1 == len(args):
             players.append(make_player('computer', 'p_computer'))
         else:
-            for i in argv[2:]:
+            for i in args[1:]:
                 players.append(make_player(i, i))
         winner = play_game(players)
         sys.exit()
 
     elif 'game' == c:
-        logging.basicConfig(level=logging.DEBUG,
-                            format='%(message)s', stream=sys.stdout)
-        playernames = argv[2:]
+        logging.basicConfig(level=log_level, format='%(message)s', 
+                        stream=sys.stdout)
+ 
+        playernames = args[1:]
+
         players = []
         for player_id, playername in enumerate(playernames):
             players.append(make_player(chr(ord('a') + player_id), playername))
@@ -553,89 +633,32 @@ def main(argv):
         sys.exit()
 
     elif 'tournament' == c:
-        global g_catch_exceptions
-        g_catch_exceptions = True
-        logging.basicConfig(level=logging.DEBUG,
-                            format='%(message)s', stream=sys.stdout)
-        games = int(argv[2])
-        playernames = argv[3:]
+        logging.basicConfig(level=log_level, format='%(message)s', 
+                        stream=sys.stdout)
+        playernames = args[1:]
         players = []
         for player_id, playername in enumerate(playernames):
             players.append(make_player(chr(ord('a') + player_id), playername))
-        play_tournament(games, players)
+        play_tournament(num_games, players)
         sys.exit()
-
-    elif 'time' == c:
-        playername = argv[2]
-        p1 = make_player(1, playername)
-        p2 = make_player(2, 'p_random')
-        print('playing 100 games against random ...')
-        play_tournament(100, [p1, p2])
-        print('%s: %f seconds, %d calls' % (playername, p1.elapsed, p1.calls))
-        print('random: %f seconds, %d calls' % (p2.elapsed, p2.calls))
-        print('%s is %.1fx slower than random' % (playername, \
-              (p1.elapsed / p1.calls) / (p2.elapsed / p2.calls)))
-        sys.exit()
-
-    elif 'deck' == c:
-        d = new_deck()
-        for i in d:
-            print '%d\t%s' % (i, card_str(i))
-
-    elif 'hands' == c:
-        for a in new_deck():
-            for b in new_deck():
-                if b <= a:
-                    continue
-                for c in new_deck():
-                    if c <= b:
-                        continue
-                    x = hand_value((a, b, c))
-                    print 'HAND\t%s\t%d\t%s' % (hand_str((a, b, c)), \
-                            x >> 28, hand_value_str(x)) 
- 
-    elif 'hands4' == c:
-        for a in new_deck():
-            for b in new_deck():
-                if b <= a:
-                    continue
-                for c in new_deck():
-                    if c <= b:
-                        continue
-                    for d in new_deck():
-                        if d <= c:
-                            continue
-                        h = (a, b, c, d)
-                        x = best_hand_value(h)
-                        print 'HAND\t%s\t%d\t%s' % (hand_str(h), \
-                                x >> 28, hand_value_str(x)) 
-
-
-    elif 'best' == c:
-        for i in range(int(sys.argv[2])):
-            d = new_deck()
-            random.shuffle(d)
-            best = [0, 0]
-            for j in range(int(sys.argv[3])):
-                h = d[:4]
-                d = d[4:]
-                x = best_hand_value(h)
-                if x == best[0]:
-                    best[1] += 1
-                elif x > best[0]:
-                    best = [x, 0]
-            print 'HAND\t%d\t%d\t%s' % (best[1], best[0] >> 28, \
-                                hand_value_str(best[0])) 
 
     elif 'verify' == c:
-        logging.basicConfig(level=logging.DEBUG,
-                            format='%(message)s', stream=sys.stdout)
-        result = verify_player(argv[2])
+        logging.basicConfig(level=logging.DEBUG, format='%(message)s', 
+                        stream=sys.stdout)
+        result = verify_player(args[1])
         sys.exit(result)
 
+    elif 'time' == c:
+        logging.basicConfig(level=logging.INFO, format='%(message)s', 
+                        stream=sys.stdout)
+        time_player(args[1])
+        sys.exit()
+    
     else:
-        print 'i don\'t know how to "%s". please see README.md for dox' % c
+        print 'i don\'t know how to "%s".' % c
+        usage()
+        sys.exit()
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main(sys.argv[1:])
