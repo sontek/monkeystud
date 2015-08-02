@@ -196,7 +196,7 @@ def make_player(player_id, dirname):
         p.playername = p.playername[z + 1:]
     p.play = None
     if None == m or not hasattr(m, 'play'):
-        logging.error('%s has no function "play"; ignoring ...' % filename)
+        logging.error('%s has no function "play"; ignoring ...' % dirname)
     else:
         p.play = getattr(m, 'play')
     p.elapsed = 0.0
