@@ -4,7 +4,7 @@
 
 import os, random, sys, itertools, logging, imp, time, itertools, getopt
 
-EXPECTED_PYTON_VERSION  = (2, 7)    # must be running python 2.7
+EXPECTED_PYTHON_VERSION = (2, 7)    # must be running python 2.7
 MAX_TIME                = 100.0     # bot can be no more than 100x slower
 
 CHIPS_START    = 1024               # each player starts with 1024 chips
@@ -23,7 +23,7 @@ STRF           = 5                  # straight flush
 
 
 g_catch_exceptions = False
-
+g_max_time = MAX_TIME
 
 def make_card(r, s):
     return (r << 3) | s
@@ -496,18 +496,6 @@ def play_tournament(games, players):
             logging.info('BOTFIGHT\t%d\t%d\t%s' % (game_num, n, t))
 
 
-def time_player(playername):
-    p1 = make_player(1, playername)
-    p2 = make_player(2, 'p_random')
-    logging.info('playing 100 games against random ...')
-    play_tournament(100, [p1, p2])
-    logging.info('%s: %f seconds, %d calls' % (playername, p1.elapsed, p1.calls))
-    logging.info('random: %f seconds, %d calls' % (p2.elapsed, p2.calls))
-    factor = (p1.elapsed / p1.calls) / (p2.elapsed / p2.calls)
-    factor = logging.info('player is %.1fx slower than random' % factor)
-    return factor
-
-
 def verify_player(playername):
     global g_catch_exceptions
     g_catch_exceptions = True
@@ -520,8 +508,14 @@ def verify_player(playername):
         logging.info('verification FAILED. import failed.')
         return 3
     p2 = make_player(2, 'p_random')
-    if max_speed < factor:
-        logging.info('verification FAILED. max_speed is %.1f.' % max_speed)
+    logging.info('playing 100 games against random ...')
+    play_tournament(100, [p1, p2])
+    logging.info('%s: %f seconds, %d calls' % (playername, p1.elapsed, p1.calls))
+    logging.info('random: %f seconds, %d calls' % (p2.elapsed, p2.calls))
+    factor = (p1.elapsed / p1.calls) / (p2.elapsed / p2.calls)
+    logging.info('player is %.1fx slower than random' % factor)
+    if g_max_time < factor:
+        logging.info('verification FAILED. max_time is %.1f.' % g_max_time)
         return 1
     logging.info('verification success.')
     return 0
@@ -533,7 +527,7 @@ monkeystud! see: http://github.com/botfights/monkeystud for dox
 
 usage:
 
-    $ python monkeystud.py [<options>] <command> <arg> <arg> ...
+    $ python monkeystud.py <command> [<option> ...] [<arg> ...]
 
 commands:
 
@@ -556,18 +550,24 @@ options:
     --num-games=<n>                 set number of games for tournament
     --log-level=<n>                 set log level (10 debug, 20 info, 40 error)
     --max-time=<f>                  max time relative to p_random a bot can take
+    --verify=<off|on>               verify bots before fight
 ''')
 
 
 def main(argv):
+    if 1 > len(argv):
+        usage()
+        sys.exit()
+    command = argv[0]
     try:
-        opts, args = getopt.getopt(argv, "h", [
+        opts, args = getopt.getopt(argv[1:], "h", [
                                                     "help",
                                                     "seed=",
                                                     "catch-exceptions=",
                                                     "num-games=",
                                                     "log-level=",
                                                     "max-time=",
+                                                    "verify=",
                                                     ])
     except getopt.GetoptError as err:
         print(str(err))
@@ -575,10 +575,11 @@ def main(argv):
         sys.exit(1)
     seed = time.time()
     num_games = 1000
-    max_time = MAX_TIME
     log_level = logging.DEBUG
     global g_catch_exceptions
+    global g_max_time
     g_catch_exceptions = False
+    verify_players = False
     for o, a in opts:
         if 0:
             pass
@@ -592,68 +593,62 @@ def main(argv):
         elif o in ("--log-level", ):
             log_level = int(a)
         elif o in ("--max-time", ):
-            max_time = float(a)
+            g_max_time = float(a)
         elif o in ("--catch-exceptions", ):
             g_catch_exceptions = 'off' != a
+        elif o in ("--verify", ):
+            verify_players = 'off' != a
         else:
             raise Exception("unhandled option")
     random.seed(seed)
-    if 0 == len(args):
-        usage()
-        sys.exit()
-    c = args[0]
     
     if 0:
         pass
  
-    elif 'human' == c:
+    elif 'human' == command:
         logging.basicConfig(level=logging.INFO, format='%(message)s', 
                         stream=sys.stdout)
  
 
         players = [make_player('human', 'p_human'), ]
-        if 1 == len(args):
+        if 0 == len(args):
             players.append(make_player('computer', 'p_computer'))
         else:
-            for i in args[1:]:
+            for i in args:
                 players.append(make_player(i, i))
         winner = play_game(players)
         sys.exit()
 
-    elif 'game' == c:
+    elif 'game' == command:
         logging.basicConfig(level=log_level, format='%(message)s', 
                         stream=sys.stdout)
- 
-        playernames = args[1:]
-
         players = []
-        for player_id, playername in enumerate(playernames):
+        for player_id, playername in enumerate(args):
+            if verify_players:
+                if 0 != verify_player(playername):
+                    continue
             players.append(make_player(chr(ord('a') + player_id), playername))
         winner = play_game(players)
         sys.exit()
 
-    elif 'tournament' == c:
+    elif 'tournament' == command:
         logging.basicConfig(level=log_level, format='%(message)s', 
                         stream=sys.stdout)
-        playernames = args[1:]
         players = []
-        for player_id, playername in enumerate(playernames):
+        for player_id, playername in enumerate(args):
+            if verify_players:
+                if 0 != verify_player(playername):
+                    continue
             players.append(make_player(chr(ord('a') + player_id), playername))
         play_tournament(num_games, players)
         sys.exit()
 
-    elif 'verify' == c:
+    elif 'verify' == command:
         logging.basicConfig(level=logging.DEBUG, format='%(message)s', 
                         stream=sys.stdout)
-        result = verify_player(args[1])
+        result = verify_player(args[0])
         sys.exit(result)
 
-    elif 'time' == c:
-        logging.basicConfig(level=logging.INFO, format='%(message)s', 
-                        stream=sys.stdout)
-        time_player(args[1])
-        sys.exit()
-    
     else:
         print 'i don\'t know how to "%s".' % c
         usage()
