@@ -650,7 +650,7 @@ def main(argv):
         sys.exit(result)
 
     else:
-        print 'i don\'t know how to "%s".' % c
+        print 'i don\'t know how to "%s".' % command
         usage()
         sys.exit()
 
