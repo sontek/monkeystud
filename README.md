@@ -65,14 +65,14 @@ edit the `play()` function, and play your bot against the computer:
 
 To play a tournament of 100 games:
 
-    $ python monkeystud.py tournament 100 mybot p_random p_computer
+    $ python monkeystud.py tournament --num-games=100 mybot p_random p_computer
 
 The winner of the tournament is the player who wins the most games,
 in total. Note that `player_id` is consistent across games.
 
-To time your robot (to make sure it's not too slow, compared to `p_random`):
+To verify your robot (to make sure it's not too slow, compared to `p_random`):
 
-    $ python monkeystud.py time mybot
+    $ python monkeystud.py verify mybot
 
 Once your ready, upload your bot to http://botfights.io to challenge other
 coders. See http://botfights.io/how-to-play for more information.
