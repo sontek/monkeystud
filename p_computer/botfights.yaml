@@ -1,0 +1,4 @@
+---
+name: p_computer
+description: sample bot. doesn't remember anything, doesn't look at anything other than his cards. no randomness.
+public: true
