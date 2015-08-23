@@ -485,6 +485,7 @@ def play_tournament(games, players):
     n = games_per_table * len(tables)
     game_num = 0
     for table in tables:
+        table = list(table)
         for i in range(games_per_table):
             winner = play_game(table)
             winner.wins += 1
