@@ -21,9 +21,9 @@ def play(player_id, hand, history):
     if 3 == len(hand):
         v = hand_value(hand)
         c = hand_value_class(v) 
-        if c in (TRIP, STRF):
+        if c in (TRIP, STRF, FLUSH):
             return 'B'
-        if c in (STR, FLUSH):
+        if c in (STR, ):
             return 'C'
         return 'F'
 
@@ -33,8 +33,8 @@ def play(player_id, hand, history):
     if 4 == len(hand):
         v = best_hand_value(hand)
         c = hand_value_class(v)
-        if c in (STRF, ):
+        if c in (STRF, TRIP):
             return 'B'
-        if c in (TRIP, FLUSH):
+        if c in (FLUSH, ):
             return 'C'
         return 'F'
