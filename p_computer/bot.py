@@ -1,4 +1,4 @@
-# p_computer.py -- just look at my hand, don't remember anything
+# p_computer.py -- just look at my hand, don't remember anything, no random
 
 from monkeystud import rank_suit, hand_value, best_hand_value, hand_value_class
 from monkeystud import PAIR, STR, FLUSH, TRIP, STRF
@@ -15,18 +15,19 @@ def play(player_id, hand, history):
             return 'C'
         return 'F'
 
-    # three cards? bet on flush or trips, call on a straight, otherwise fold
+    # three cards? bet on trips or straight flush, call on a straight or flush,
+    # otherwise fold
     #
     if 3 == len(hand):
         v = hand_value(hand)
         c = hand_value_class(v) 
-        if c in (FLUSH, TRIP, STRF):
+        if c in (TRIP, STRF):
             return 'B'
-        if c in (STR, ):
+        if c in (STR, FLUSH):
             return 'C'
         return 'F'
 
-    # four cards? bet on straight flush, call on trips, straight, or flush, 
+    # four cards? bet on straight flush, call on trips or flush,
     # fold otherwise
     #
     if 4 == len(hand):
@@ -37,4 +38,3 @@ def play(player_id, hand, history):
         if c in (TRIP, FLUSH):
             return 'C'
         return 'F'
-
