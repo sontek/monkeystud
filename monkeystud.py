@@ -479,25 +479,19 @@ def play_tournament(games, players):
     """
     for i in players:
         i.wins = 0
-    if MAX_SEATS < len(players):
-        tables = list(itertools.combinations(players, MAX_SEATS))
-        games_per_table = games // len(tables)
-    else:
-        tables = [players, ]
-        games_per_table = games
-    n = games_per_table * len(tables)
-    game_num = 0
-    for table in tables:
-        table = list(table)
-        for i in range(games_per_table):
-            winner = play_game(table)
-            winner.wins += 1
-            t = ''
-            players.sort(key = lambda x : x.wins,reverse = True)
-            for j in players:
-                t += '%s:%d\t' % (j.playername, j.wins)
-            game_num += 1
-            logging.info('BOTFIGHT\t%d\t%d\t%s' % (game_num, n, t))
+    for i in range(games):
+        if MAX_SEATS < len(players):
+            random.shuffle(players)
+            table = players[:MAX_SEATS]
+        else:
+            table = players
+        winner = play_game(table)
+        winner.wins += 1
+        t = ''
+        players.sort(key = lambda x : x.wins,reverse = True)
+        for j in players:
+            t += '%s:%d\t' % (j.playername, j.wins)
+        logging.info('BOTFIGHT\t%d\t%d\t%s' % (i, games, t))
 
 
 def verify_player(playername):
