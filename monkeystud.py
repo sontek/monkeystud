@@ -220,7 +220,7 @@ def play_hand(players):
     """
     play a single hand of monkeystud
     """
-    
+
     # sit
     #
     history = []
@@ -253,8 +253,8 @@ def play_hand(players):
         # ante
         #
         if 0 == state:
-            
-            # ante is 1% of total chip count, or the 
+
+            # ante is 1% of total chip count, or the
             # lowest number of chips amongst active
             # players, whatever is lower
             #
@@ -292,12 +292,12 @@ def play_hand(players):
                     history.append((i.player_id, 'U', card_str(card)))
                     logging.debug('ACTION\t%s is dealt %s up' % \
                             (i.player_id, card_str(card)))
-    
+
         # betting rounds
         #
         if state in (2, 3, 4):
 
-            # keep asking players for their bet until 
+            # keep asking players for their bet until
             # there's no new action
             #
             raised_to = 0
@@ -321,14 +321,14 @@ def play_hand(players):
                         break
                 if action == last_action:
                     break
-    
+
                 # no new action?
                 #
                 if players[action].played and players[action].paid == raised_to:
                     break
-                
+
                 # get their play
-                # 
+                #
                 x = players[action].get_play(serialize_history(history))
                 players[action].played = True
 
@@ -347,7 +347,7 @@ def play_hand(players):
                         player_count -= 1
                         if 1 == player_count:
                             break
-                
+
                 # call?
                 #
                 if 'C' == x:
@@ -527,8 +527,8 @@ usage:
 
 commands:
 
-    human [<opponent1>] [<oppponent2>] ... 
-                        
+    human [<opponent1>] [<oppponent2>] ...
+
                         play against the computer
 
     game [<player1>] [<player2>] ...
@@ -539,7 +539,7 @@ commands:
 
                         play a tournament between players
 options:
- 
+
     -h, --help                      show this help
     --seed=<s>                      set seed for random number generator
     --catch-exceptions=<off|on>     catch and log exceptions
@@ -597,14 +597,14 @@ def main(argv):
         else:
             raise Exception("unhandled option")
     random.seed(seed)
-    
+
     if 0:
         pass
- 
+
     elif 'human' == command:
-        logging.basicConfig(level=logging.INFO, format='%(message)s', 
+        logging.basicConfig(level=logging.INFO, format='%(message)s',
                         stream=sys.stdout)
- 
+
 
         players = [make_player('human', 'p_human'), ]
         if 0 == len(args):
@@ -616,7 +616,7 @@ def main(argv):
         sys.exit()
 
     elif 'game' == command:
-        logging.basicConfig(level=log_level, format='%(message)s', 
+        logging.basicConfig(level=log_level, format='%(message)s',
                         stream=sys.stdout)
         players = []
         for player_id, playername in enumerate(args):
@@ -628,7 +628,7 @@ def main(argv):
         sys.exit()
 
     elif 'tournament' == command:
-        logging.basicConfig(level=log_level, format='%(message)s', 
+        logging.basicConfig(level=log_level, format='%(message)s',
                         stream=sys.stdout)
         players = []
         for player_id, playername in enumerate(args):
@@ -640,7 +640,7 @@ def main(argv):
         sys.exit()
 
     elif 'verify' == command:
-        logging.basicConfig(level=logging.DEBUG, format='%(message)s', 
+        logging.basicConfig(level=logging.DEBUG, format='%(message)s',
                         stream=sys.stdout)
         result = verify_player(args[0])
         sys.exit(result)
