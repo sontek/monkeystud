@@ -330,6 +330,8 @@ def play_hand(players):
                 # get their play
                 #
                 x = players[action].get_play(serialize_history(history))
+                if not x in ('F', 'C', 'B'):
+                    x = 'F'
                 players[action].played = True
 
                 # fold?
