@@ -10,3 +10,5 @@ def test_play_hand_valid_argument():
     play_hand([player1, player2], False)
     assert player1.folded is True
     assert player2.folded is False
+    player1.done()
+    player2.done()
