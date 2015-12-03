@@ -86,9 +86,11 @@ def game(obj, competitors):
             )
             if 0 != player_valid:
                 continue
-        players.append(make_player(
+        player = make_player(
             chr(ord('a') + player_id), playername, obj.catch_exceptions
-        ))
+        )
+        players.append(player)
+
     winner = play_game(players, obj.catch_exceptions)
     sys.exit()
 

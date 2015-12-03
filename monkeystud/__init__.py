@@ -3,6 +3,8 @@
 # see README.rst for more dox
 
 import os, random, sys, itertools, logging, imp, time, itertools, getopt
+from multiprocessing import Process, Queue as MPQueue
+import Queue
 import click
 from signal import signal, SIGPIPE, SIG_DFL
 signal(SIGPIPE, SIG_DFL)
@@ -150,10 +152,71 @@ def best_hand_value(h):
     return best
 
 
-class Player(object):
-    def __init__(self, chips):
-        self.chips = chips
+class Player(Process):
+    def __init__(self,player_id, dirname, chips, catch_exceptions):
+        Process.__init__(self)
 
+        self.player_id = player_id
+        self.chips = chips
+        self.elapsed = 0.0
+        self.calls = 0
+        self.catch_exceptions = catch_exceptions
+        self.dirname = dirname
+        self.send_queue = MPQueue()
+        self.recv_queue = MPQueue()
+
+        z = dirname.rfind('/')
+        if -1 != z:
+            self.playername = dirname[z + 1:]
+        else:
+            self.playername = dirname
+
+    def get_play(self, x):
+        return call_player(
+            self,
+            (self.player_id, self.hand, x),
+            'F',
+            self.catch_exceptions
+        )
+
+    def play(self, player_id, hand, history):
+        self.send_queue.put((player_id, hand, history))
+        result = self.recv_queue.get()
+        return result
+
+    def done(self):
+        self.send_queue.put('QUIT')
+
+    def run(self):
+        func = None
+
+        try:
+            name = 'bot'
+            (f, filename, data) = imp.find_module(name, [self.dirname, ])
+            m = imp.load_module(name, f, filename, data)
+            if None == m or not hasattr(m, 'play'):
+                logging.error(
+                    '%s has no function "play"; ignoring ...' % self.dirname
+                )
+            else:
+                func = getattr(m, 'play')
+
+        except:
+            logging.error('caught exception "%s" loading %s' % \
+                          (sys.exc_info()[1], dirname))
+
+            if not self.catch_exceptions:
+                raise
+
+        if func is not None:
+            while True:
+                data = self.send_queue.get()
+
+                if data == "QUIT":
+                    break
+
+                result = func(*data)
+                self.recv_queue.put(result)
 
 def call_player(player, args, default, catch_exceptions):
     result = default
@@ -174,32 +237,8 @@ def call_player(player, args, default, catch_exceptions):
 
 
 def make_player(player_id, dirname, catch_exceptions):
-    m = None
-    try:
-        name = 'bot'
-        (f, filename, data) = imp.find_module(name, [dirname, ])
-        m = imp.load_module(name, f, filename, data)
-    except:
-        logging.error('caught exception "%s" loading %s' % \
-                      (sys.exc_info()[1], dirname))
-        if not catch_exceptions:
-            raise
-    p = Player(CHIPS_START)
-    p.player_id = player_id
-    p.playername = dirname
-    z = p.playername.rfind('/')
-    if -1 != z:
-        p.playername = p.playername[z + 1:]
-    p.play = None
-    if None == m or not hasattr(m, 'play'):
-        logging.error('%s has no function "play"; ignoring ...' % dirname)
-    else:
-        p.play = getattr(m, 'play')
-    p.elapsed = 0.0
-    p.calls = 0
-    p.get_play = lambda x: call_player(
-        p, (p.player_id, p.hand, x), 'F', catch_exceptions
-    )
+    p = Player(player_id, dirname, CHIPS_START, catch_exceptions)
+    p.start()
     return p
 
 
@@ -466,6 +505,9 @@ def play_game(players, catch_exceptions):
                 winner = i
         logging.debug('CHIPS\t%s' % t)
         if None != winner:
+            for i in players:
+                i.done()
+
             return winner
         play_hand(players, catch_exceptions)
 
