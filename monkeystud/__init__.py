@@ -150,8 +150,9 @@ def best_hand_value(h):
     return best
 
 
-class Player():
-    pass
+class Player(object):
+    def __init__(self, chips):
+        self.chips = chips
 
 
 def call_player(player, args, default, catch_exceptions):
@@ -183,7 +184,7 @@ def make_player(player_id, dirname, catch_exceptions):
                       (sys.exc_info()[1], dirname))
         if not catch_exceptions:
             raise
-    p = Player()
+    p = Player(CHIPS_START)
     p.player_id = player_id
     p.playername = dirname
     z = p.playername.rfind('/')
@@ -325,6 +326,7 @@ def play_hand(players, catch_exceptions):
                 # get their play
                 #
                 x = players[action].get_play(serialize_history(history))
+
                 if not x in ('F', 'C', 'B'):
                     x = 'F'
                 players[action].played = True
@@ -455,8 +457,6 @@ def play_game(players, catch_exceptions):
     """
     play a game with chips, return winner
     """
-    for i in players:
-        i.chips = CHIPS_START
     while 1:
         t = ''
         winner = None

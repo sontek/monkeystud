@@ -2,3 +2,5 @@
 *.swp
 .eggs/
 *.egg-info/
+.cache/
+.tox/
