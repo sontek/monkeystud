@@ -159,9 +159,9 @@ class Player():
     pass
 
 
-def call_player(player, args, default):
+def call_player(player, args):
     global g_catch_exceptions
-    result = default
+    result = None
     start = time.clock()
     try:
         result = player.play(*args)
@@ -203,7 +203,7 @@ def make_player(player_id, dirname):
         p.play = getattr(m, 'play')
     p.elapsed = 0.0
     p.calls = 0
-    p.get_play = lambda x: call_player(p, (p.player_id, p.hand, x), 'F')
+    p.get_play = lambda x: call_player(p, (p.player_id, p.hand, x))
     return p
 
 
@@ -331,7 +331,7 @@ def play_hand(players):
                 #
                 x = players[action].get_play(serialize_history(history))
                 if not x in ('F', 'C', 'B'):
-                    x = 'F'
+                    x = random.choice(('F', 'C', 'B'))
                 players[action].played = True
 
                 # fold?
