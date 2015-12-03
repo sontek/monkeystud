@@ -155,8 +155,7 @@ class Player(object):
         self.chips = chips
 
 
-def call_player(player, args, default, catch_exceptions):
-    result = default
+def call_player(player, args, catch_exceptions):
     start = time.clock()
     try:
         result = player.play(*args)
@@ -198,8 +197,9 @@ def make_player(player_id, dirname, catch_exceptions):
     p.elapsed = 0.0
     p.calls = 0
     p.get_play = lambda x: call_player(
-        p, (p.player_id, p.hand, x), 'F', catch_exceptions
+        p, (p.player_id, p.hand, x), catch_exceptions
     )
+
     return p
 
 
@@ -328,7 +328,7 @@ def play_hand(players, catch_exceptions):
                 x = players[action].get_play(serialize_history(history))
 
                 if not x in ('F', 'C', 'B'):
-                    x = 'F'
+                    x = random.choice(('F', 'C', 'B'))
                 players[action].played = True
 
                 # fold?
@@ -342,7 +342,9 @@ def play_hand(players, catch_exceptions):
                     else:
                         players[action].folded = True
                         history.append((players[action].player_id, 'F', 0))
-                        logging.debug('ACTION\t%s folds' % players[action].player_id)
+                        logging.debug(
+                            'ACTION\t%s folds' % players[action].player_id
+                        )
                         player_count -= 1
                         if 1 == player_count:
                             break
