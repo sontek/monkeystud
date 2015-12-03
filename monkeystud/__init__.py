@@ -175,7 +175,6 @@ class Player(Process):
         return call_player(
             self,
             (self.player_id, self.hand, x),
-            'F',
             self.catch_exceptions
         )
 
@@ -218,8 +217,7 @@ class Player(Process):
                 result = func(*data)
                 self.recv_queue.put(result)
 
-def call_player(player, args, default, catch_exceptions):
-    result = default
+def call_player(player, args, catch_exceptions):
     start = time.clock()
     try:
         result = player.play(*args)
@@ -239,6 +237,7 @@ def call_player(player, args, default, catch_exceptions):
 def make_player(player_id, dirname, catch_exceptions):
     p = Player(player_id, dirname, CHIPS_START, catch_exceptions)
     p.start()
+
     return p
 
 
@@ -367,7 +366,7 @@ def play_hand(players, catch_exceptions):
                 x = players[action].get_play(serialize_history(history))
 
                 if not x in ('F', 'C', 'B'):
-                    x = 'F'
+                    x = random.choice(('F', 'C', 'B'))
                 players[action].played = True
 
                 # fold?
@@ -381,7 +380,9 @@ def play_hand(players, catch_exceptions):
                     else:
                         players[action].folded = True
                         history.append((players[action].player_id, 'F', 0))
-                        logging.debug('ACTION\t%s folds' % players[action].player_id)
+                        logging.debug(
+                            'ACTION\t%s folds' % players[action].player_id
+                        )
                         player_count -= 1
                         if 1 == player_count:
                             break
