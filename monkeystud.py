@@ -324,7 +324,7 @@ def play_hand(players, blind):
                 #
                 x = players[action].get_play(serialize_history(history))
                 if not x in ('F', 'C', 'B'):
-                    x = random.choice(('F', 'C', 'B'))
+                    x = 'F'
                 players[action].played = True
 
                 # fold?
@@ -620,7 +620,10 @@ def main(argv):
             if verify_players:
                 if 0 != verify_player(playername):
                     continue
-            players.append(make_player(chr(ord('a') + player_id), playername))
+            player = make_player(chr(ord('a') + player_id), playername)
+            if None == player.play:
+                continue
+            players.append(player)
         winner = play_game(players)
         sys.exit()
 
@@ -632,7 +635,10 @@ def main(argv):
             if verify_players:
                 if 0 != verify_player(playername):
                     continue
-            players.append(make_player(chr(ord('a') + player_id), playername))
+            player = make_player(chr(ord('a') + player_id), playername)
+            if None == player.play:
+                continue
+            players.append(player)
         play_tournament(num_games, players)
         sys.exit()
 
