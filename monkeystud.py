@@ -478,8 +478,7 @@ def play_tournament(games, players):
         i.wins = 0
     for i in range(games):
         if MAX_SEATS < len(players):
-            random.shuffle(players)
-            table = players[:MAX_SEATS]
+            table = random.sample(players, MAX_SEATS)
             logging.info('TABLE\t%s' % ' '.join(map(lambda x: x.playername, table)))
         else:
             table = players
