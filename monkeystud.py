@@ -255,16 +255,19 @@ def play_hand(players, blind):
 
             # only the first player bets blind
             #
+            ante = blind
+            button = None
             for i in players:
                 if 0 == i.chips:
                     continue
-                ante = min(blind, i.chips)
-                pot += ante
-                i.chips -= ante
-                i.paid += ante
-                history.append((i.player_id, 'A', ante))
-                logging.debug('ACTION\t%s antes %d' % (i.player_id, ante))
-                break
+                if None == button:
+                    button = i
+                ante = min(ante, i.chips)
+            pot += ante
+            button.chips -= ante
+            button.paid += ante
+            history.append((button.player_id, 'A', ante))
+            logging.debug('ACTION\t%s antes %d' % (button.player_id, ante))
 
         # cards
         #
