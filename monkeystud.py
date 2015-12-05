@@ -10,7 +10,6 @@ signal(SIGPIPE, SIG_DFL)
 MAX_TIME                = 100.0     # bot can be no more than 100x slower
 
 CHIPS_START    = 1024               # each player starts with 1024 chips
-ANTE           = 6                  # ante is 1 / 64th total chip count each
 MAX_SEATS      = 8                  # maximum seats at a table
 
 RANKS          = 8                  # duece through nine
@@ -216,7 +215,7 @@ def serialize_history(history):
     return t
 
 
-def play_hand(players):
+def play_hand(players, blind):
     """
     play a single hand of monkeystud
     """
@@ -254,27 +253,18 @@ def play_hand(players):
         #
         if 0 == state:
 
-            # ante is 1% of total chip count, or the
-            # lowest number of chips amongst active
-            # players, whatever is lower
+            # only the first player bets blind
             #
-            sum_chips = 0
-            min_chips = None
             for i in players:
                 if 0 == i.chips:
                     continue
-                sum_chips += i.chips
-                if None == min_chips or i.chips < min_chips:
-                    min_chips = i.chips
-            ante = min(min_chips, (sum_chips >> ANTE) // player_count)
-            for i in players:
-                if 0 == i.chips:
-                    continue
+                ante = min(blind, i.chips)
                 pot += ante
                 i.chips -= ante
                 i.paid += ante
                 history.append((i.player_id, 'A', ante))
                 logging.debug('ACTION\t%s antes %d' % (i.player_id, ante))
+                break
 
         # cards
         #
@@ -462,6 +452,7 @@ def play_game(players):
     """
     for i in players:
         i.chips = CHIPS_START
+    blind = 1
     while 1:
         t = ''
         winner = None
@@ -472,7 +463,8 @@ def play_game(players):
         logging.debug('CHIPS\t%s' % t)
         if None != winner:
             return winner
-        play_hand(players)
+        play_hand(players, blind)
+        blind += 1
 
 
 def play_tournament(games, players):
