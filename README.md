@@ -11,8 +11,8 @@ Players are dealt four cards, the first face down, the rest face up.
 There are betting rounds after the second, third, and fourth cards.
 
 Up to eight players can play at once. Each player starts with 1000 chips.
-Seats are shuffled before every hand. The first player bets blind (ante).
-Blinds start at 1 chip, then go up by 1 each subsequent hand.
+Seats are shuffled before every hand. Antes start at 1 chip, then go up
+by 1 each subsequent hand.
 
 A play is either fold, call, or bet. The bet amount is the size of
 the pot, not more than any one player's stack.
@@ -28,19 +28,20 @@ A complete hand might look something like:
     a:S:1000
     b:S:1000
     a:A:4
+    b:A:4
     a:D:xx
     b:D:xx
     a:U:2c
     b:U:7d
     a:C:0
-    b:B:4
+    b:B:8
     a:F:0
-    b:W:8
+    b:W:16
 
-Meaning, player A and player B sit with 1000 chips each. Player A antes 4
-chips, each is dealt a hole card face down, player A is dealt the duece of
-clubs, B is dealt the seven of diamonds, player A checks, B bets 32, A
-folds, B wins 8 chips.
+Meaning, player A and player B sit with 1000 chips each. Each player antes
+4 chips, each is dealt a hole card face down, player A is dealt the duece of
+clubs, B is dealt the seven of diamonds, player A checks, B bets 8, A
+folds, B wins 16 chips.
 
 To implement a bot, first get a copy of the game:
 

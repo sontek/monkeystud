@@ -215,7 +215,7 @@ def serialize_history(history):
     return t
 
 
-def play_hand(players, blind):
+def play_hand(players, ante_amount):
     """
     play a single hand of monkeystud
     """
@@ -253,21 +253,21 @@ def play_hand(players, blind):
         #
         if 0 == state:
 
-            # only the first player bets blind
+            # find the ante amount
             #
-            ante = blind
-            button = None
+            ante = ante_amount
             for i in players:
                 if 0 == i.chips:
                     continue
-                if None == button:
-                    button = i
                 ante = min(ante, i.chips)
-            pot += ante
-            button.chips -= ante
-            button.paid += ante
-            history.append((button.player_id, 'A', ante))
-            logging.debug('ACTION\t%s antes %d' % (button.player_id, ante))
+            for i in players:
+                if 0 == i.chips:
+                    continue
+                pot += ante
+                i.chips -= ante
+                i.paid += ante
+                history.append((i.player_id, 'A', ante))
+                logging.debug('ACTION\t%s antes %d' % (i.player_id, ante))
 
         # cards
         #
@@ -455,7 +455,7 @@ def play_game(players):
     """
     for i in players:
         i.chips = CHIPS_START
-    blind = 1
+    ante_amount = 1
     while 1:
         t = ''
         winner = None
@@ -466,8 +466,8 @@ def play_game(players):
         logging.debug('CHIPS\t%s' % t)
         if None != winner:
             return winner
-        play_hand(players, blind)
-        blind += 1
+        play_hand(players, ante_amount)
+        ante_amount += 1
 
 
 def play_tournament(games, players):
