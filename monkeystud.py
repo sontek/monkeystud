@@ -445,6 +445,7 @@ def play_hand(players, ante_amount, kibitzers = None):
         i.get_play(serialized_history)
     if None != kibitzers:
         for i in kibitzers:
+            i.hand = None
             i.get_play(serialized_history)
 
     # all done.
