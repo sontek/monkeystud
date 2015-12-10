@@ -215,7 +215,7 @@ def serialize_history(history):
     return t
 
 
-def play_hand(players, ante_amount):
+def play_hand(players, ante_amount, kibitzers = None):
     """
     play a single hand of monkeystud
     """
@@ -437,19 +437,22 @@ def play_hand(players, ante_amount):
         logging.debug('ACTION\t%s wins remainder %s' % \
                 (lucky_player.player_id, remainder))
 
-    # show everyone what happened
+    # show everyone what happened (including just observers)
     #
     serialized_history = serialize_history(history)
     logging.debug('HISTORY\t%s' % serialized_history)
     for i in players:
         i.get_play(serialized_history)
+    if None != kibitzers:
+        for i in kibitzers:
+            i.get_play(serialized_history)
 
     # all done.
     #
     return
 
 
-def play_game(players):
+def play_game(players, kibitzers = None):
     """
     play a game with chips, return winner
     """
@@ -466,7 +469,7 @@ def play_game(players):
         logging.debug('CHIPS\t%s' % t)
         if None != winner:
             return winner
-        play_hand(players, ante_amount)
+        play_hand(players, ante_amount, kibitzers)
         ante_amount += 1
 
 
@@ -477,12 +480,20 @@ def play_tournament(games, players):
     for i in players:
         i.wins = 0
     for i in range(games):
+        kibitzers = None
         if MAX_SEATS < len(players):
             table = random.sample(players, MAX_SEATS)
             logging.info('TABLE\t%s' % ' '.join(map(lambda x: x.playername, table)))
+            kibitzers = []
+            seated = {}
+            for j in table:
+                seated[j.player_id] = 1
+            for j in players:
+                if not j.player_id in seated:
+                    kibitzers.append(j)
         else:
             table = players
-        winner = play_game(table)
+        winner = play_game(table, kibitzers)
         winner.wins += 1
         t = ''
         players.sort(key = lambda x : x.wins,reverse = True)
