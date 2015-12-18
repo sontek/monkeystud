@@ -1,6 +1,3 @@
-MonkeyStud
-==========
-
 MonkeyStud is a poker variant, suitable for computer play.
 
 The game is played with a 32 card deck, only the duece through
@@ -10,9 +7,9 @@ high card, pair, straight, flush, trips, straight flush.
 Players are dealt four cards, the first face down, the rest face up.
 There are betting rounds after the second, third, and fourth cards.
 
-Up to eight players can play at once. Seats are shuffled before every hand.
-Each player starts with 1024 chips. Ante is 1/64th of total chips, divided
-evenly between all players, not more than any one player's stack.
+Up to eight players can play at once. Each player starts with 1000 chips.
+Seats are shuffled before every hand. Antes start at 1 chip, then go up
+by 1 each subsequent hand.
 
 A play is either fold, call, or bet. The bet amount is the size of
 the pot, not more than any one player's stack.
