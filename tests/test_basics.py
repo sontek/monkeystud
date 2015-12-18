@@ -14,9 +14,11 @@ def test_play_hand_valid_argument():
 
     player1.get_play = get_play
     player2 = make_player('p_2', 'p_random', False)
-    play_hand([player1, player2], False)
-    player1.done()
-    player2.done()
+    try:
+        play_hand([player1, player2], 10, False)
+    finally:
+        player1.done()
+        player2.done()
 
     assert player1.played is True
     assert player2.played is True
