@@ -92,6 +92,10 @@ def game(obj, competitors):
         players.append(player)
 
     winner = play_game(players, obj.catch_exceptions)
+
+    for i in players:
+        i.done()
+
     sys.exit()
 
 

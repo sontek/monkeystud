@@ -25,23 +25,23 @@ Sit, Ante, face Down, face Up, Fold, Call, Bet, Reveal, and Win.
 
 A complete hand might look something like:
 
-    a:S:1024
-    b:S:1024
-    a:A:16
-    b:A:16
+    a:S:1000
+    b:S:1000
+    a:A:4
+    b:A:4
     a:D:xx
     b:D:xx
     a:U:2c
     b:U:7d
     a:C:0
-    b:B:32
+    b:B:8
     a:F:0
-    b:W:64
+    b:W:16
 
-Meaning, player A and player B sit with 1024 chips each, each antes 16 and
-is dealt a hole card face down, player A is dealt the duece of clubs, B is
-dealt the seven of diamonds, player A checks, B bets 32, A folds, B wins
-64 chips.
+Meaning, player A and player B sit with 1000 chips each. Each player antes
+4 chips, each is dealt a hole card face down, player A is dealt the duece of
+clubs, B is dealt the seven of diamonds, player A checks, B bets 8, A
+folds, B wins 16 chips.
 
 To implement a bot, first get a copy of the game:
 

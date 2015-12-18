@@ -11,6 +11,7 @@ signal(SIGPIPE, SIG_DFL)
 
 CHIPS_START    = 1024               # each player starts with 1024 chips
 ANTE           = 6                  # ante is 1 / 64th total chip count each
+MAX_TIME       = 100.0              # bot can be no more than 100x slower
 MAX_SEATS      = 8                  # maximum seats at a table
 
 RANKS          = 8                  # duece through nine
@@ -188,7 +189,6 @@ class Player(Process):
 
     def run(self):
         func = None
-
         try:
             name = 'bot'
             (f, filename, data) = imp.find_module(name, [self.dirname, ])
@@ -206,14 +206,11 @@ class Player(Process):
 
             if not self.catch_exceptions:
                 raise
-
         if func is not None:
             while True:
                 data = self.send_queue.get()
-
                 if data == "QUIT":
                     break
-
                 result = func(*data)
                 self.recv_queue.put(result)
 
@@ -237,7 +234,6 @@ def call_player(player, args, catch_exceptions):
 def make_player(player_id, dirname, catch_exceptions):
     p = Player(player_id, dirname, CHIPS_START, catch_exceptions)
     p.start()
-
     return p
 
 
@@ -250,11 +246,10 @@ def serialize_history(history):
     return t
 
 
-def play_hand(players, catch_exceptions):
+def play_hand(players, catch_exceptions, ante_amount, kibitzers=None):
     """
     play a single hand of monkeystud
     """
-
     # sit
     #
     history = []
@@ -288,19 +283,13 @@ def play_hand(players, catch_exceptions):
         #
         if 0 == state:
 
-            # ante is 1% of total chip count, or the
-            # lowest number of chips amongst active
-            # players, whatever is lower
+            # find the ante amount
             #
-            sum_chips = 0
-            min_chips = None
+            ante = ante_amount
             for i in players:
                 if 0 == i.chips:
                     continue
-                sum_chips += i.chips
-                if None == min_chips or i.chips < min_chips:
-                    min_chips = i.chips
-            ante = min(min_chips, (sum_chips >> ANTE) // player_count)
+                ante = min(ante, i.chips)
             for i in players:
                 if 0 == i.chips:
                     continue
@@ -330,7 +319,6 @@ def play_hand(players, catch_exceptions):
         # betting rounds
         #
         if state in (2, 3, 4):
-
             # keep asking players for their bet until
             # there's no new action
             #
@@ -341,7 +329,6 @@ def play_hand(players, catch_exceptions):
             action = None
             last_action = None
             while 1:
-
                 # advance the action
                 #
                 while 1:
@@ -353,6 +340,7 @@ def play_hand(players, catch_exceptions):
                             action = 0
                     if not players[action].folded:
                         break
+
                 if action == last_action:
                     break
 
@@ -366,7 +354,7 @@ def play_hand(players, catch_exceptions):
                 x = players[action].get_play(serialize_history(history))
 
                 if not x in ('F', 'C', 'B'):
-                    x = random.choice(('F', 'C', 'B'))
+                    x = 'F'
                 players[action].played = True
 
                 # fold?
@@ -380,9 +368,7 @@ def play_hand(players, catch_exceptions):
                     else:
                         players[action].folded = True
                         history.append((players[action].player_id, 'F', 0))
-                        logging.debug(
-                            'ACTION\t%s folds' % players[action].player_id
-                        )
+                        logging.debug('ACTION\t%s folds' % players[action].player_id)
                         player_count -= 1
                         if 1 == player_count:
                             break
@@ -481,22 +467,30 @@ def play_hand(players, catch_exceptions):
         logging.debug('ACTION\t%s wins remainder %s' % \
                 (lucky_player.player_id, remainder))
 
-    # show everyone what happened
+    # show everyone what happened (including just observers)
     #
     serialized_history = serialize_history(history)
     logging.debug('HISTORY\t%s' % serialized_history)
     for i in players:
         i.get_play(serialized_history)
+    if None != kibitzers:
+        for i in kibitzers:
+            i.hand = None
+            i.get_play(serialized_history)
 
     # all done.
     #
     return
 
 
-def play_game(players, catch_exceptions):
+def play_game(players, catch_exceptions, kibitzers=None):
     """
     play a game with chips, return winner
     """
+    for i in players:
+        i.chips = CHIPS_START
+    ante_amount = 1
+
     while 1:
         t = ''
         winner = None
@@ -506,11 +500,10 @@ def play_game(players, catch_exceptions):
                 winner = i
         logging.debug('CHIPS\t%s' % t)
         if None != winner:
-            for i in players:
-                i.done()
-
             return winner
-        play_hand(players, catch_exceptions)
+
+        play_hand(players, catch_exceptions, ante_amount, kibitzers)
+        ante_amount += 1
 
 
 def play_tournament(games, players, catch_exceptions):
@@ -519,13 +512,30 @@ def play_tournament(games, players, catch_exceptions):
     """
     for i in players:
         i.wins = 0
+
     for i in range(games):
+        kibitzers = None
         if MAX_SEATS < len(players):
-            random.shuffle(players)
-            table = players[:MAX_SEATS]
+            table = random.sample(players, MAX_SEATS)
+            logging.info(
+                'TABLE\t%s' % ' '.join(map(lambda x: x.playername, table))
+            )
+            kibitzers = []
+            seated = {}
+            for j in table:
+                seated[j.player_id] = 1
+            for j in players:
+                if not j.player_id in seated:
+                    kibitzers.append(j)
         else:
             table = players
-        winner = play_game(table, catch_exceptions)
+
+        # Start the players back up
+        for p in table:
+            if p.is_alive() is False:
+                p.start()
+
+        winner = play_game(table, catch_exceptions, kibitzers)
         winner.wins += 1
         t = ''
         players.sort(key = lambda x : x.wins,reverse = True)
@@ -533,6 +543,8 @@ def play_tournament(games, players, catch_exceptions):
             t += '%s:%d\t' % (j.playername, j.wins)
         logging.info('BOTFIGHT\t%d\t%d\t%s' % (i, games, t))
 
+    for i in players:
+        i.done()
 
 def verify_player(max_time, playername):
     catch_exceptions = True
