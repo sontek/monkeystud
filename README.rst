@@ -1,3 +1,6 @@
+MonkeyStud
+==========
+
 MonkeyStud is a poker variant, suitable for computer play.
 
 The game is played with a 32 card deck, only the duece through
