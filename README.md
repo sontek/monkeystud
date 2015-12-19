@@ -3,7 +3,7 @@ MonkeyStud
 
 MonkeyStud is a poker variant, suitable for computer play.
 
-The game is played with a 32 card deck, only the duece through
+The game is played with a 32 card deck, only the deuce through
 nine are used. The best three card hand wins. The hand ranks are:
 high card, pair, straight, flush, trips, straight flush.
 
@@ -39,7 +39,7 @@ A complete hand might look something like:
     b:W:16
 
 Meaning, player A and player B sit with 1000 chips each. Each player antes
-4 chips, each is dealt a hole card face down, player A is dealt the duece of
+4 chips, each is dealt a hole card face down, player A is dealt the deuce of
 clubs, B is dealt the seven of diamonds, player A checks, B bets 8, A
 folds, B wins 16 chips.
 
