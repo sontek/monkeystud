@@ -153,18 +153,14 @@ def best_hand_value(h):
     return best
 
 
-class Player(Process):
-    def __init__(self,player_id, dirname, chips, catch_exceptions):
-        Process.__init__(self)
-
+class BasePlayer(object):
+    def __init__(self, player_id, dirname, chips, catch_exceptions):
         self.player_id = player_id
         self.chips = chips
         self.elapsed = 0.0
         self.calls = 0
         self.catch_exceptions = catch_exceptions
         self.dirname = dirname
-        self.send_queue = MPQueue()
-        self.recv_queue = MPQueue()
 
         z = dirname.rfind('/')
         if -1 != z:
@@ -172,12 +168,50 @@ class Player(Process):
         else:
             self.playername = dirname
 
+    def import_bot(self):
+        name = 'bot'
+        func = None
+        (f, filename, data) = imp.find_module(name, [self.dirname, ])
+        try:
+            m = imp.load_module(name, f, filename, data)
+        except ImportError:
+            logging.error("Couldn't import bot.py from %s" % self.dirname)
+
+        if None == m or not hasattr(m, 'play'):
+            logging.error(
+                '%s has no function "play"; ignoring ...' % self.dirname
+            )
+        else:
+            func = getattr(m, 'play')
+
+        return func
+
     def get_play(self, x):
         return call_player(
             self,
             (self.player_id, self.hand, x),
             self.catch_exceptions
         )
+
+
+    def done(self):
+        pass
+
+    def is_alive(self):
+        return True
+
+class PlayerMemory(BasePlayer):
+    def __init__(self, player_id, dirname, chips, catch_exceptions):
+        BasePlayer.__init__(self, player_id, dirname, chips, catch_exceptions)
+        self.play = self.import_bot()
+
+class PlayerProcess(BasePlayer, Process):
+    def __init__(self, player_id, dirname, chips, catch_exceptions):
+        Process.__init__(self)
+        BasePlayer.__init__(self, player_id, dirname, chips, catch_exceptions)
+
+        self.send_queue = MPQueue()
+        self.recv_queue = MPQueue()
 
     def play(self, player_id, hand, history):
         self.send_queue.put((player_id, hand, history))
@@ -188,21 +222,11 @@ class Player(Process):
         self.send_queue.put('QUIT')
 
     def run(self):
-        func = None
         try:
-            name = 'bot'
-            (f, filename, data) = imp.find_module(name, [self.dirname, ])
-            m = imp.load_module(name, f, filename, data)
-            if None == m or not hasattr(m, 'play'):
-                logging.error(
-                    '%s has no function "play"; ignoring ...' % self.dirname
-                )
-            else:
-                func = getattr(m, 'play')
-
+            func = self.import_bot()
         except:
             logging.error('caught exception "%s" loading %s' % \
-                          (sys.exc_info()[1], dirname))
+                          (sys.exc_info()[1], self.dirname))
 
             if not self.catch_exceptions:
                 raise
@@ -231,9 +255,12 @@ def call_player(player, args, catch_exceptions):
     return result
 
 
-def make_player(player_id, dirname, catch_exceptions):
-    p = Player(player_id, dirname, CHIPS_START, catch_exceptions)
-    p.start()
+def make_player(player_id, dirname, catch_exceptions, subprocess=True):
+    if subprocess is True:
+        p = PlayerProcess(player_id, dirname, CHIPS_START, catch_exceptions)
+        p.start()
+    else:
+        p = PlayerMemory(player_id, dirname, CHIPS_START, catch_exceptions)
     return p
 
 

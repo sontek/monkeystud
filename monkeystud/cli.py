@@ -9,10 +9,11 @@ from monkeystud import make_player, play_tournament, play_game, verify_player
 MAX_TIME       = 100.0     # bot can be no more than 100x slower
 
 class Config(object):
-    def __init__(self, verify_players, catch_exceptions, max_time):
+    def __init__(self, verify_players, catch_exceptions, max_time, subprocess):
         self.verify_players = verify_players
         self.catch_exceptions = catch_exceptions
         self.max_time = max_time
+        self.subprocess = subprocess
 
 
 @click.group(context_settings={'help_option_names': ['-h', '--help']})
@@ -38,9 +39,14 @@ class Config(object):
     default='DEBUG',
     type=str
 )
+@click.option(
+    '--subprocess', help='Run bots in subprocesses',
+    default=True,
+    type=bool
+)
 @click.pass_context
 @click.version_option()
-def main(ctx, seed, catch_exceptions, max_time, verify, log_level):
+def main(ctx, seed, catch_exceptions, max_time, verify, log_level, subprocess):
     """
     monkeystud! see: http://github.com/botfights/monkeystud for dox
     """
@@ -54,7 +60,7 @@ def main(ctx, seed, catch_exceptions, max_time, verify, log_level):
     logging.basicConfig(
         level=log_level, format='%(message)s', stream=sys.stdout
     )
-    obj = Config(verify, catch_exceptions, max_time)
+    obj = Config(verify, catch_exceptions, max_time, subprocess)
     ctx.obj = obj
 
 
@@ -63,7 +69,9 @@ def main(ctx, seed, catch_exceptions, max_time, verify, log_level):
 @click.argument('competitors', nargs=-1)
 @click.pass_obj
 def human(obj, competitors):
-    players = [make_player('human', 'p_human', obj.catch_exceptions),]
+    players = [
+        make_player('human', 'p_human', obj.catch_exceptions, False),
+    ]
     if competitors:
         for i in competitors:
             players.append(make_player(i, i, obj.catch_exceptions))
@@ -113,7 +121,8 @@ def tournament(obj, num_games, competitors):
             if 0 != verify_player(obj.max_time, playername):
                 continue
         players.append(make_player(
-            chr(ord('a') + player_id), playername, obj.catch_exceptions
+            chr(ord('a') + player_id), playername, obj.catch_exceptions,
+            obj.subprocess
         ))
     play_tournament(num_games, players, obj.catch_exceptions)
     sys.exit()

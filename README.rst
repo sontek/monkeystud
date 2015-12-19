@@ -75,6 +75,11 @@ To verify your robot (to make sure it's not too slow, compared to `p_random`):
 
     $ monkeystud verify mybot
 
+By default the bots are ran in a subprocess mode for security, if you need
+to use a debugger like pdb you can run `--subprocess=False`:
+
+    $ monkeystud --subprocess=False tournament p_random p_computer
+
 Once your ready, upload your bot to http://botfights.io to challenge other
 coders. See http://botfights.io/how-to-play for more information.
 
