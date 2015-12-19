@@ -95,7 +95,8 @@ def game(obj, competitors):
             if 0 != player_valid:
                 continue
         player = make_player(
-            chr(ord('a') + player_id), playername, obj.catch_exceptions
+            chr(ord('a') + player_id), playername, obj.catch_exceptions,
+            obj.subprocess
         )
         players.append(player)
 
