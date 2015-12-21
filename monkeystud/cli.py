@@ -74,9 +74,15 @@ def human(obj, competitors):
     ]
     if competitors:
         for i in competitors:
-            players.append(make_player(i, i, obj.catch_exceptions))
+            players.append(
+                make_player(i, i, obj.catch_exceptions, obj.subprocess)
+            )
     else:
-        players.append(make_player('computer', 'p_computer'))
+        players.append(
+            make_player(
+                'computer', 'p_computer', obj.catch_exceptions, obj.subprocess
+            )
+        )
 
     winner = play_game(players, obj.catch_exceptions)
     sys.exit()
