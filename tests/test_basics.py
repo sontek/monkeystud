@@ -53,3 +53,18 @@ def test_play_game_ante():
     assert antes[0] < antes[-1]
     assert player1.played is True
     assert player2.played is True
+
+
+@pytest.mark.unit
+def test_make_player_subprocess():
+    from monkeystud import PlayerProcess
+    from monkeystud import PlayerMemory
+    from monkeystud import make_player
+
+    player1 = make_player('p_1', 'p_random', False, subprocess=True)
+    player2 = make_player('p_2', 'p_random', False, subprocess=False)
+    player1.done()
+    player2.done()
+
+    assert isinstance(player1, PlayerProcess)
+    assert isinstance(player2, PlayerMemory)
