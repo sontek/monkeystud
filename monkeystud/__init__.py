@@ -1,6 +1,6 @@
 # monkeystud.py -- MonkeyStud, a poker variant for bots
 
-# see README.rst for more dox
+# see README.md for more dox
 
 import os, random, sys, itertools, logging, imp, time, itertools, getopt
 from multiprocessing import Process, Queue as MPQueue
