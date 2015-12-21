@@ -9,7 +9,7 @@ import click
 from signal import signal, SIGPIPE, SIG_DFL
 signal(SIGPIPE, SIG_DFL)
 
-CHIPS_START    = 1024               # each player starts with 1024 chips
+CHIPS_START    = 1000               # each player starts with 1000 chips
 ANTE           = 6                  # ante is 1 / 64th total chip count each
 MAX_TIME       = 100.0              # bot can be no more than 100x slower
 MAX_SEATS      = 8                  # maximum seats at a table
