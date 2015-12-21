@@ -10,7 +10,6 @@ from signal import signal, SIGPIPE, SIG_DFL
 signal(SIGPIPE, SIG_DFL)
 
 CHIPS_START    = 1000               # each player starts with 1000 chips
-MAX_TIME       = 100.0              # bot can be no more than 100x slower
 MAX_SEATS      = 8                  # maximum seats at a table
 
 RANKS          = 8                  # duece through nine
