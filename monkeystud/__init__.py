@@ -220,6 +220,8 @@ class PlayerProcess(BasePlayer, Process):
         self.send_queue.put('QUIT')
 
     def run(self):
+        result = None
+
         try:
             func = self.import_bot()
         except:
@@ -228,16 +230,29 @@ class PlayerProcess(BasePlayer, Process):
 
             if not self.catch_exceptions:
                 raise
+
         if func is not None:
             while True:
                 data = self.send_queue.get()
                 if data == "QUIT":
                     break
-                result = func(*data)
+                try:
+                    result = func(*data)
+                except:
+                    logging.warn(
+                        'caught exception "%s" calling %s (%s)' % (
+                            sys.exc_info()[1], self.player_id, self.playername
+                        )
+                    )
+                    if not self.catch_exceptions:
+                        raise
+
                 self.recv_queue.put(result)
 
 def call_player(player, args, catch_exceptions):
     start = time.clock()
+    result = None
+
     try:
         result = player.play(*args)
     except KeyboardInterrupt:
